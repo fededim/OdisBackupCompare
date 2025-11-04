@@ -8,12 +8,16 @@ namespace OdisBackupCompare
     public class DictionaryList<T, TKey> : List<T>
     {
         protected Dictionary<TKey, T> _dictionaryLookup { get; set; }
-        protected Func<T, TKey> ProjectionFunction { get; set; }
+        protected Func<T, int, TKey> ProjectionFunction { get; set; }
 
-        public DictionaryList(Func<T, TKey> projectionFunction) : base()
+        public DictionaryList(Func<T, int, TKey> projectionFunction) : base()
         {
             ProjectionFunction = projectionFunction;
         }
+
+
+
+
 
         [JsonIgnore]
         public Dictionary<TKey, T> Dictionary
@@ -21,7 +25,22 @@ namespace OdisBackupCompare
             get
             {
                 if (_dictionaryLookup == null)
-                    _dictionaryLookup = this.ToDictionary(ProjectionFunction);
+                {
+                    _dictionaryLookup = new Dictionary<TKey, T>();
+                    foreach (var el in this)
+                    {
+                        // to force an unique key since in the gateways there are repeated values for the same ti_name (e.g. SFT0004B)
+                        TKey key;
+                        var i = 1;
+                        do
+                        {
+                            key = ProjectionFunction(el, i++);
+                        }
+                        while (_dictionaryLookup.ContainsKey(key));
+
+                        _dictionaryLookup.Add(key, el);
+                    }
+                }
 
                 return _dictionaryLookup;
             }
@@ -34,7 +53,7 @@ namespace OdisBackupCompare
 
             if (keyBeautify != null)
                 result = result.Select(kvp => new KeyValuePair<TKey, T>(keyBeautify(kvp.Key), kvp.Value));
-            
+
             return result.ToDictionary();
         }
 
@@ -215,10 +234,10 @@ namespace OdisBackupCompare
     public class Vehicle
     {
         [XmlElement("vehicle_data")]
-        public DictionaryList<NameValueData, String> VehicleData { get; set; } = new DictionaryList<NameValueData, String>(el => el.DisplayName);
+        public DictionaryList<NameValueData, String> VehicleData { get; set; } = new DictionaryList<NameValueData, String>((el, uniqueIndex) => el.DisplayName);
 
         [XmlElement("odx_info")]
-        public DictionaryList<NameValueData, String> OdxInfo { get; set; } = new DictionaryList<NameValueData, String>(el => el.DisplayName);
+        public DictionaryList<NameValueData, String> OdxInfo { get; set; } = new DictionaryList<NameValueData, String>((el, uniqueIndex) => el.DisplayName);
 
         [XmlElement("communications")]
         public List<Communication> Communications { get; set; }
@@ -284,7 +303,7 @@ namespace OdisBackupCompare
         public String TesterOdxVariant { get; set; }
 
         [XmlElement("ecu_master")]
-        public DictionaryList<EcuData, String> EcuMasters { get; set; } = new DictionaryList<EcuData, String>((el) => el.Type);
+        public DictionaryList<EcuData, String> EcuMasters { get; set; } = new DictionaryList<EcuData, String>((el, uniqueIndex) => el.Type);
 
         [XmlElement("ecu_subsystem")]
         public EcuSubsystems EcuSubsystems { get; set; }
@@ -334,7 +353,7 @@ namespace OdisBackupCompare
         public String TiName { get; set; }
 
         [XmlElement("values")]
-        public DictionaryList<ValueItem, String> Values { get; set; } = new DictionaryList<ValueItem, String>((el) => el.TiName ?? el.DisplayName);
+        public DictionaryList<ValueItem, String> Values { get; set; } = new DictionaryList<ValueItem, String>((el, uniqueIndex) => el.TiName ?? el.DisplayName);
 
         [XmlElement("swap_fod_status")]
         public SwapFodStatus SwapFodStatus { get; set; }
@@ -374,7 +393,7 @@ namespace OdisBackupCompare
         public String DisplayUnit { get; set; }
 
         [XmlElement("values")]
-        public DictionaryList<ValueItem, String> SubValues { get; set; } = new DictionaryList<ValueItem, String>((el) => el.TiName ?? el.DisplayName);
+        public DictionaryList<ValueItem, String> SubValues { get; set; } = new DictionaryList<ValueItem, String>((el, uniqueIndex) => $"{el.TiName ?? el.DisplayName}_{uniqueIndex}");
     }
 
     [Serializable]
@@ -414,111 +433,9 @@ namespace OdisBackupCompare
     public class EcuSubsystems
     {
         [XmlElement("subsystem")]
-        public DictionaryList<EcuData, String> Subsystems { get; set; } = new DictionaryList<EcuData, String>((el) => $"{el.Type}_{el.TiName ?? el.Values.First(v => v.TiName == "MAS01171").DisplayValue}");
+        public DictionaryList<EcuData, String> Subsystems { get; set; } = new DictionaryList<EcuData, String>((el, uniqueIndex) => $"{el.Type}_{el.TiName ?? el.Values.First(v => v.TiName == "MAS01171").DisplayValue}");
     }
 
 
 
-    public class ComparisonResults
-    {
-        public Dictionary<String, Ecu> EcusMissingInFirst { get; set; }
-        public Dictionary<String, Ecu> EcusMissingInSecond { get; set; }
-
-        public DictionaryList<EcuComparisonResult, String> EcusComparisonResult { get; set; }
-
-
-        public ComparisonResults()
-        {
-            EcusComparisonResult = new DictionaryList<EcuComparisonResult, String>(ecu => ecu.EcuId);
-            EcusMissingInFirst = new Dictionary<String, Ecu>();
-            EcusMissingInSecond = new Dictionary<String, Ecu>();
-        }
-    }
-
-
-
-    public class EcuComparisonResult
-    {
-        public String EcuId { get; set; }
-        public String[] EcuNames => new String[] { First.EcuName, Second.EcuName }.Distinct().ToArray();
-
-        [JsonIgnore]
-        public Ecu First { get; set; }
-        [JsonIgnore]
-        public Ecu Second { get; set; }
-
-        // MASTER DATA
-        public Dictionary<String, EcuData> MasterEcuDataMissingInFirst { get; set; }
-        public Dictionary<String, EcuData> MasterEcuDataMissingInSecond { get; set; }
-
-
-        public List<EcuDataComparisonResult> MasterDataComparisonResult { get; set; }
-
-
-        // SUBSYSTEM DATA
-        public Dictionary<String, EcuData> SubsystemEcuDataMissingInFirst { get; set; }
-        public Dictionary<String, EcuData> SubsystemEcuDataMissingInSecond { get; set; }
-
-        public List<EcuDataComparisonResult> SubsystemDataComparisonResult { get; set; }
-
-
-        public EcuComparisonResult()
-        {
-            MasterDataComparisonResult = new List<EcuDataComparisonResult>();
-            MasterEcuDataMissingInFirst = new Dictionary<String, EcuData>();
-            MasterEcuDataMissingInSecond = new Dictionary<String, EcuData>();
-
-            SubsystemDataComparisonResult = new List<EcuDataComparisonResult>();
-            SubsystemEcuDataMissingInFirst = new Dictionary<String, EcuData>();
-            SubsystemEcuDataMissingInSecond = new Dictionary<String, EcuData>();
-        }
-
-        [JsonIgnore]
-        public bool IsEmpty => MasterEcuDataMissingInFirst.Count == 0 && MasterEcuDataMissingInSecond.Count == 0 && MasterDataComparisonResult.Count == 0 &&
-            SubsystemEcuDataMissingInFirst?.Count == 0 && SubsystemEcuDataMissingInSecond?.Count == 0 && SubsystemDataComparisonResult?.Count == 0;
-    }
-
-
-
-    public class EcuDataComparisonResult
-    {
-        public Dictionary<String, ValueItem> FieldsMissingInFirst { get; set; }
-        public Dictionary<String, ValueItem> FieldsMissingInSecond { get; set; }
-
-        public List<DifferenceMessage> Messages { get; set; }
-
-        [JsonIgnore]
-        public EcuData First { get; set; }
-        [JsonIgnore]
-        public EcuData Second { get; set; }
-
-
-        public EcuDataComparisonResult()
-        {
-            Messages = new List<DifferenceMessage>();
-
-            FieldsMissingInFirst = new Dictionary<String, ValueItem>();
-            FieldsMissingInSecond = new Dictionary<String, ValueItem>();
-        }
-
-        [JsonIgnore]
-        public bool IsEmpty => FieldsMissingInFirst.Count == 0 && FieldsMissingInSecond.Count == 0 && Messages.Count == 0;
-    }
-
-
-
-    public class DifferenceMessage
-    {
-        public List<String> Path { get; set; }
-        public List<String> FieldDescriptions { get; set; }
-        public FieldPropertyEnum FieldProperty { get; set; }
-        public String Message { get; set; }
-        public String ValueFirst { get; set; }
-        public String ValueSecond { get; set; }
-
-        public DifferenceMessage()
-        {
-            Path = new List<String>();
-        }
-    }
 }

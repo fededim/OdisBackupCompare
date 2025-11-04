@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace OdisBackupCompare
 {
@@ -104,7 +105,7 @@ namespace OdisBackupCompare
                 var firstData = first.EcuMasters.Dictionary[ecuMasterType];
                 var secondData = second.EcuMasters.Dictionary[ecuMasterType];
 
-                var compareEcuDataResult = CompareEcuData(new List<String> { first.EcuId, MeaningfulText.Map(ecuMasterType) }, firstData, secondData);
+                var compareEcuDataResult = CompareEcuData(new List<String> { first.EcuId, MeaningfulText.Map(ecuMasterType) }, null, firstData, secondData);
                 if (!compareEcuDataResult.IsEmpty)
                     ecuComparisonResult.MasterDataComparisonResult.Add(compareEcuDataResult);
             }
@@ -122,7 +123,11 @@ namespace OdisBackupCompare
                     var firstData = first.EcuSubsystems.Subsystems.Dictionary[ecuSubsystemType];
                     var secondData = second.EcuSubsystems.Subsystems.Dictionary[ecuSubsystemType];
 
-                    var compareEcuDataResult = CompareEcuData(new List<String> { first.EcuId, "subsystem", MeaningfulText.Map(ecuSubsystemType) }, firstData, secondData);
+                    var descriptions = (String.IsNullOrWhiteSpace(firstData.TiName) && String.IsNullOrWhiteSpace(secondData.TiName))?
+                        new List<String> { $"{firstData.Values?.FirstOrDefault(v => v.TiName == "IDE00013")?.DisplayValue} - {firstData.Values?.FirstOrDefault(v => v.TiName == "IDE00007")?.DisplayValue}", $"{ secondData.Values?.FirstOrDefault(v => v.TiName == "IDE00013")?.DisplayValue } - { secondData.Values?.FirstOrDefault(v => v.TiName == "IDE00007")?.DisplayValue }" } :
+                        new List<String> { firstData.TiName, secondData.TiName };
+
+                    var compareEcuDataResult = CompareEcuData(new List<String> { first.EcuId, "subsystem", MeaningfulText.Map(ecuSubsystemType) }, descriptions, firstData, secondData);
                     if (!compareEcuDataResult.IsEmpty)
                         ecuComparisonResult.SubsystemDataComparisonResult.Add(compareEcuDataResult);
                 }
@@ -133,43 +138,53 @@ namespace OdisBackupCompare
 
 
 
-        public EcuDataComparisonResult CompareEcuData(List<String> mainpath, EcuData first, EcuData second)
+        public EcuDataComparisonResult CompareEcuData(List<String> mainpath, List<String> descriptions, EcuData first, EcuData second)
         {
-            var result = new EcuDataComparisonResult { First = first, Second = second };
+            var path = new List<String>(mainpath) { first.TiName };
+
+            var result = new EcuDataComparisonResult { First = first, Second = second, Path = path, Descriptions = descriptions };
 
             if (first.TiName != second.TiName)
                 throw new InvalidDataException($"TI_NAME: {first.TiName} is different from {second.TiName}!");
 
-            CompareStrings(result.Messages, new List<String>(mainpath) { first.TiName }, new List<String>(mainpath) { first.DisplayName, second.DisplayName }, FieldPropertyEnum.DisplayName, first.DisplayName, second.DisplayName);
+            CompareStrings(result.Differences, path, new List<String>(mainpath) { first.DisplayName, second.DisplayName }, FieldPropertyEnum.DisplayName, first.DisplayName, second.DisplayName);
 
-            // Compare values
-            result.FieldsMissingInFirst = second.Values?.FilterByPredicate(kvp => second.Values?.Dictionary?.Keys.Except(first.Values?.Dictionary?.Keys ?? EmptyStringList).Contains(kvp.Key) ?? false);
-            result.FieldsMissingInSecond = first.Values?.FilterByPredicate(kvp => first.Values?.Dictionary?.Keys.Except(second.Values?.Dictionary?.Keys ?? EmptyStringList).Contains(kvp.Key) ?? false);
-
-            // keys here are actual values
-            foreach (var valueItemKey in first.Values.Dictionary.Keys.Intersect(second.Values.Dictionary.Keys))
-            {
-                var firstValue = first.Values.Dictionary[valueItemKey];
-                var secondValue = second.Values.Dictionary[valueItemKey];
-
-                var path = new List<String>(mainpath) { first.TiName, valueItemKey };
-
-                var fieldDescriptions = new List<String>() { firstValue.DisplayName, secondValue.DisplayName }.Distinct().ToList();
-
-                CompareStrings(result.Messages, path, fieldDescriptions, FieldPropertyEnum.TiName, firstValue.TiName, secondValue.TiName);
-                CompareStrings(result.Messages, path, fieldDescriptions, FieldPropertyEnum.TiUnit, firstValue.TiUnit, secondValue.TiUnit);
-                CompareStrings(result.Messages, path, fieldDescriptions, FieldPropertyEnum.DisplayName, firstValue.DisplayName, secondValue.DisplayName);
-                CompareStrings(result.Messages, path, fieldDescriptions, FieldPropertyEnum.DisplayValue, firstValue.DisplayValue, secondValue.DisplayValue);
-                CompareStrings(result.Messages, path, fieldDescriptions, FieldPropertyEnum.DisplayUnit, firstValue.DisplayUnit, secondValue.DisplayUnit);
-                if (!CompareStrings(result.Messages, path, fieldDescriptions, FieldPropertyEnum.BinValue, firstValue.BinValue, secondValue.BinValue))
-                    if (!CompareStrings(result.Messages, path, fieldDescriptions, FieldPropertyEnum.HexValue, firstValue.HexValue, secondValue.HexValue))
-                        CompareStrings(result.Messages, path, fieldDescriptions, FieldPropertyEnum.TiValue, firstValue.TiValue, secondValue.TiValue);
-            }
-
-
-            // TODO SUBVALUES
+            CompareValueItem(result, mainpath, first?.Values, second?.Values);
 
             return result;
+        }
+
+
+
+        public void CompareValueItem(EcuDataComparisonResult result, List<String> mainpath, DictionaryList<ValueItem, String> first, DictionaryList<ValueItem, String> second)
+        {
+            // Compare values
+            result.FieldsMissingInFirst.AddRange(second?.FilterByPredicate(kvp => second?.Dictionary?.Keys.Except(first?.Dictionary?.Keys ?? EmptyStringList).Contains(kvp.Key) ?? false));
+            result.FieldsMissingInSecond.AddRange(first?.FilterByPredicate(kvp => first?.Dictionary?.Keys.Except(second?.Dictionary?.Keys ?? EmptyStringList).Contains(kvp.Key) ?? false));
+
+            // keys here are actual values
+            foreach (var valueItemKey in first.Dictionary.Keys.Intersect(second.Dictionary.Keys))
+            {
+                var firstValue = first.Dictionary[valueItemKey];
+                var secondValue = second.Dictionary[valueItemKey];
+
+                var path = new List<String>(mainpath) { valueItemKey };
+                var fieldDescriptions = new List<String>() { firstValue.DisplayName, secondValue.DisplayName }.Distinct().ToList();
+
+                CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.TiName, firstValue.TiName, secondValue.TiName);
+                CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.TiUnit, firstValue.TiUnit, secondValue.TiUnit);
+                CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.DisplayName, firstValue.DisplayName, secondValue.DisplayName);
+                CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.DisplayValue, firstValue.DisplayValue, secondValue.DisplayValue);
+                CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.DisplayUnit, firstValue.DisplayUnit, secondValue.DisplayUnit);
+                if (!CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.BinValue, firstValue.BinValue, secondValue.BinValue))
+                    if (!CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.HexValue, firstValue.HexValue, secondValue.HexValue))
+                        CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.TiValue, firstValue.TiValue, secondValue.TiValue);
+
+                // perform recursion of subvalues
+                if (firstValue.SubValues?.Count>0 || secondValue.SubValues?.Count > 0)
+                    CompareValueItem(result, path, firstValue?.SubValues, secondValue?.SubValues);
+            }
+
         }
 
 
@@ -184,7 +199,7 @@ namespace OdisBackupCompare
                 (!String.IsNullOrWhiteSpace(first) && String.IsNullOrWhiteSpace(second)) ||
                 (first != second)))
             {
-                errors.Add(new DifferenceMessage { Path = path, FieldDescriptions = fieldDescriptions, FieldProperty = fieldProperty, Message = $"{first} is different from {second}", ValueFirst = first, ValueSecond = second });
+                errors.Add(new DifferenceMessage { Path = path, FieldDescriptions = fieldDescriptions, FieldProperty = fieldProperty, Message = $"{first} is different from {second}", FirstValue = first, SecondValue = second });
                 return true;
             }
 
