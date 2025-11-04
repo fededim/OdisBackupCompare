@@ -1,5 +1,6 @@
 ﻿using System.Net.WebSockets;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using System.Xml.Serialization;
 
 namespace OdisBackupCompare
@@ -14,6 +15,7 @@ namespace OdisBackupCompare
             ProjectionFunction = projectionFunction;
         }
 
+        [JsonIgnore]
         public Dictionary<TKey, T> Dictionary
         {
             get
@@ -24,6 +26,18 @@ namespace OdisBackupCompare
                 return _dictionaryLookup;
             }
         }
+
+
+        public Dictionary<TKey, T> FilterByPredicate(Predicate<KeyValuePair<TKey, T>> predicate, Func<TKey, TKey> keyBeautify = null)
+        {
+            var result = Dictionary.Where(kvp => predicate(kvp));
+
+            if (keyBeautify != null)
+                result = result.Select(kvp => new KeyValuePair<TKey, T>(keyBeautify(kvp.Key), kvp.Value));
+            
+            return result.ToDictionary();
+        }
+
     }
 
 
@@ -34,10 +48,10 @@ namespace OdisBackupCompare
     public class OdisData
     {
         [XmlElement("time_of_issue")]
-        public string TimeOfIssue { get; set; }
+        public String TimeOfIssue { get; set; }
 
         [XmlElement("charset")]
-        public string Charset { get; set; }
+        public String Charset { get; set; }
 
         [XmlElement("orientation_right_to_left")]
         public bool OrientationRightToLeft { get; set; }
@@ -50,7 +64,7 @@ namespace OdisBackupCompare
 
 
 
-        public static OdisData ParseFromXml(string xmlContent)
+        public static OdisData ParseFromXml(String xmlContent)
         {
             var serializer = new XmlSerializer(typeof(OdisData));
             using var reader = new StringReader(xmlContent);
@@ -58,7 +72,7 @@ namespace OdisBackupCompare
         }
 
 
-        public static OdisData ParseFromFile(string filePath)
+        public static OdisData ParseFromFile(String filePath)
         {
             var serializer = new XmlSerializer(typeof(OdisData));
             using var reader = new StreamReader(filePath);
@@ -66,17 +80,17 @@ namespace OdisBackupCompare
         }
 
 
-        public string GetVin()
+        public String GetVin()
         {
             return Vehicle?.VehicleData?.FirstOrDefault(v => v.DisplayName == "vin")?.DisplayValue;
         }
 
-        public string GetMileage()
+        public String GetMileage()
         {
             return Vehicle?.VehicleData?.FirstOrDefault(v => v.DisplayName == "mileage")?.DisplayValue;
         }
 
-        public Dictionary<String, Ecu> GetEcus(string ecuId = null, string ecuName = null)
+        public Dictionary<String, Ecu> GetEcus(String ecuId = null, String ecuName = null)
         {
             var ecus = new List<Ecu>();
 
@@ -95,35 +109,53 @@ namespace OdisBackupCompare
         }
     }
 
+
+    public static class MeaningfulText
+    {
+        static Dictionary<string, string> RemapData = new Dictionary<string, string> {
+            { "ident","Identification" },
+            { "coding_read","Coding" },
+            { "adaption_read","Adaptation" },
+        };
+
+
+        public static string Map(string s)
+        {
+            return Regex.Replace(s, $"({String.Join('|', RemapData.Keys)})", m => RemapData[m.Value]);
+        }
+    }
+
+
+
     [Serializable]
     public class Information
     {
         [XmlElement("document_name")]
-        public string DocumentName { get; set; }
+        public String DocumentName { get; set; }
 
         [XmlElement("software_name")]
-        public string SoftwareName { get; set; }
+        public String SoftwareName { get; set; }
 
         [XmlElement("login_account")]
-        public string LoginAccount { get; set; }
+        public String LoginAccount { get; set; }
 
         [XmlElement("pc_name")]
-        public string PcName { get; set; }
+        public String PcName { get; set; }
 
         [XmlElement("pc_os")]
-        public string PcOs { get; set; }
+        public String PcOs { get; set; }
 
         [XmlElement("pc_ecu")]
-        public string PcEcu { get; set; }
+        public String PcEcu { get; set; }
 
         [XmlElement("pc_hardware_id")]
-        public string PcHardwareId { get; set; }
+        public String PcHardwareId { get; set; }
 
         [XmlElement("pc_ram")]
         public long PcRam { get; set; }
 
         [XmlElement("diag_hardware")]
-        public string DiagHardware { get; set; }
+        public String DiagHardware { get; set; }
 
         [XmlElement("workshop_code")]
         public WorkshopCode WorkshopCode { get; set; }
@@ -132,48 +164,48 @@ namespace OdisBackupCompare
         public VersionInfo Version { get; set; }
 
         [XmlElement("confidentiality_level")]
-        public string ConfidentialityLevel { get; set; }
+        public String ConfidentialityLevel { get; set; }
     }
 
     [Serializable]
     public class WorkshopCode
     {
         [XmlElement("serial_number")]
-        public string SerialNumber { get; set; }
+        public String SerialNumber { get; set; }
 
         [XmlElement("importer_number")]
-        public string ImporterNumber { get; set; }
+        public String ImporterNumber { get; set; }
 
         [XmlElement("dealer_number")]
-        public string DealerNumber { get; set; }
+        public String DealerNumber { get; set; }
 
         [XmlElement("fingerprint")]
-        public string Fingerprint { get; set; }
+        public String Fingerprint { get; set; }
     }
 
     [Serializable]
     public class VersionInfo
     {
         [XmlElement("number")]
-        public string Number { get; set; }
+        public String Number { get; set; }
 
         [XmlElement("showBeta")]
         public bool ShowBeta { get; set; }
 
         [XmlElement("release")]
-        public string Release { get; set; }
+        public String Release { get; set; }
 
         [XmlElement("kernel")]
-        public string Kernel { get; set; }
+        public String Kernel { get; set; }
 
         [XmlElement("mcd")]
-        public string Mcd { get; set; }
+        public String Mcd { get; set; }
 
         [XmlElement("ecf")]
-        public string Ecf { get; set; }
+        public String Ecf { get; set; }
 
         [XmlElement("pdu_api")]
-        public string PduApi { get; set; }
+        public String PduApi { get; set; }
     }
 
     [Serializable]
@@ -198,10 +230,10 @@ namespace OdisBackupCompare
     public class NameValueData
     {
         [XmlElement("display_name")]
-        public string DisplayName { get; set; }
+        public String DisplayName { get; set; }
 
         [XmlElement("display_value")]
-        public string DisplayValue { get; set; }
+        public String DisplayValue { get; set; }
     }
 
 
@@ -214,7 +246,7 @@ namespace OdisBackupCompare
         public List<CommunicationEcu> CommunicationEcus { get; set; }
 
         [XmlAttribute("type")]
-        public string Type { get; set; }
+        public String Type { get; set; }
     }
 
 
@@ -226,7 +258,7 @@ namespace OdisBackupCompare
         public List<Ecu> Ecus { get; set; }
 
         [XmlAttribute("type")]
-        public string Type { get; set; }
+        public String Type { get; set; }
     }
 
 
@@ -240,16 +272,16 @@ namespace OdisBackupCompare
         public DateTime TimeStamp { get; set; }
 
         [XmlElement("ecu_id")]
-        public string EcuId { get; set; }
+        public String EcuId { get; set; }
 
         [XmlElement("ecu_name")]
-        public string EcuName { get; set; }
+        public String EcuName { get; set; }
 
         [XmlElement("logicallink")]
-        public string LogicalLink { get; set; }
+        public String LogicalLink { get; set; }
 
         [XmlElement("tester_odx_variant")]
-        public string TesterOdxVariant { get; set; }
+        public String TesterOdxVariant { get; set; }
 
         [XmlElement("ecu_master")]
         public DictionaryList<EcuData, String> EcuMasters { get; set; } = new DictionaryList<EcuData, String>((el) => el.Type);
@@ -273,6 +305,12 @@ namespace OdisBackupCompare
         {
             return EcuMasters.Where(m => m.Type == "adaption_read").ToList();
         }
+
+
+        public override string ToString()
+        {
+            return $"{EcuId} {EcuName} ({LogicalLink} {TesterOdxVariant})";
+        }
     }
 
 
@@ -284,22 +322,27 @@ namespace OdisBackupCompare
     public class EcuData
     {
         [XmlAttribute("type")]
-        public string Type { get; set; }
+        public String Type { get; set; }
 
         [XmlElement("time_stamp")]
         public DateTime TimeStamp { get; set; }
 
         [XmlElement("display_name")]
-        public string DisplayName { get; set; }
+        public String DisplayName { get; set; }
 
         [XmlElement("ti_name")]
-        public string TiName { get; set; }
+        public String TiName { get; set; }
 
         [XmlElement("values")]
         public DictionaryList<ValueItem, String> Values { get; set; } = new DictionaryList<ValueItem, String>((el) => el.TiName ?? el.DisplayName);
 
         [XmlElement("swap_fod_status")]
         public SwapFodStatus SwapFodStatus { get; set; }
+
+        public override string ToString()
+        {
+            return $"{MeaningfulText.Map(Type)}: {TiName}";
+        }
     }
 
     [Serializable]
@@ -307,28 +350,28 @@ namespace OdisBackupCompare
     public class ValueItem
     {
         [XmlElement("ti_name")]
-        public string TiName { get; set; }
+        public String TiName { get; set; }
 
         [XmlElement("display_name")]
-        public string DisplayName { get; set; }
+        public String DisplayName { get; set; }
 
         [XmlElement("display_value")]
-        public string DisplayValue { get; set; }
+        public String DisplayValue { get; set; }
 
         [XmlElement("bin_value")]
-        public string BinValue { get; set; }
+        public String BinValue { get; set; }
 
         [XmlElement("hex_value")]
-        public string HexValue { get; set; }
+        public String HexValue { get; set; }
 
         [XmlElement("ti_value")]
-        public string TiValue { get; set; }
+        public String TiValue { get; set; }
 
         [XmlElement("ti_unit")]
-        public string TiUnit { get; set; }
+        public String TiUnit { get; set; }
 
         [XmlElement("display_unit")]
-        public string DisplayUnit { get; set; }
+        public String DisplayUnit { get; set; }
 
         [XmlElement("values")]
         public DictionaryList<ValueItem, String> SubValues { get; set; } = new DictionaryList<ValueItem, String>((el) => el.TiName ?? el.DisplayName);
@@ -339,7 +382,7 @@ namespace OdisBackupCompare
     public class SwapFodStatus
     {
         [XmlElement("swap_public_key")]
-        public string SwapPublicKey { get; set; }
+        public String SwapPublicKey { get; set; }
 
         [XmlElement("swap_state_functions_uds")]
         public List<SwapStateFunctionsUds> SwapStateFunctionsUds { get; set; }
@@ -349,7 +392,7 @@ namespace OdisBackupCompare
     public class SwapStateFunctionsUds
     {
         [XmlElement("swap_state")]
-        public string SwapState { get; set; }
+        public String SwapState { get; set; }
 
         [XmlElement("swap_state_function")]
         public List<SwapStateFunction> SwapStateFunctions { get; set; }
@@ -359,10 +402,10 @@ namespace OdisBackupCompare
     public class SwapStateFunction
     {
         [XmlElement("function_sid")]
-        public string FunctionSid { get; set; }
+        public String FunctionSid { get; set; }
 
         [XmlElement("status_byte")]
-        public string StatusByte { get; set; }
+        public String StatusByte { get; set; }
     }
 
 
@@ -378,8 +421,8 @@ namespace OdisBackupCompare
 
     public class ComparisonResults
     {
-        public List<String> EcusMissingInFirst { get; set; }
-        public List<String> EcusMissingInSecond { get; set; }
+        public Dictionary<String, Ecu> EcusMissingInFirst { get; set; }
+        public Dictionary<String, Ecu> EcusMissingInSecond { get; set; }
 
         public DictionaryList<EcuComparisonResult, String> EcusComparisonResult { get; set; }
 
@@ -387,6 +430,8 @@ namespace OdisBackupCompare
         public ComparisonResults()
         {
             EcusComparisonResult = new DictionaryList<EcuComparisonResult, String>(ecu => ecu.EcuId);
+            EcusMissingInFirst = new Dictionary<String, Ecu>();
+            EcusMissingInSecond = new Dictionary<String, Ecu>();
         }
     }
 
@@ -395,49 +440,68 @@ namespace OdisBackupCompare
     public class EcuComparisonResult
     {
         public String EcuId { get; set; }
+        public String[] EcuNames => new String[] { First.EcuName, Second.EcuName }.Distinct().ToArray();
 
+        [JsonIgnore]
         public Ecu First { get; set; }
+        [JsonIgnore]
         public Ecu Second { get; set; }
 
         // MASTER DATA
-        public List<String> MasterDataMissingInFirst { get; set; }
-        public List<String> MasterDataMissingInSecond { get; set; }
+        public Dictionary<String, EcuData> MasterEcuDataMissingInFirst { get; set; }
+        public Dictionary<String, EcuData> MasterEcuDataMissingInSecond { get; set; }
+
+
         public List<EcuDataComparisonResult> MasterDataComparisonResult { get; set; }
 
 
         // SUBSYSTEM DATA
-        public List<String> SubsystemDataMissingInFirst { get; set; }
-        public List<String> SubsystemDataMissingInSecond { get; set; }
+        public Dictionary<String, EcuData> SubsystemEcuDataMissingInFirst { get; set; }
+        public Dictionary<String, EcuData> SubsystemEcuDataMissingInSecond { get; set; }
+
         public List<EcuDataComparisonResult> SubsystemDataComparisonResult { get; set; }
 
 
         public EcuComparisonResult()
         {
             MasterDataComparisonResult = new List<EcuDataComparisonResult>();
+            MasterEcuDataMissingInFirst = new Dictionary<String, EcuData>();
+            MasterEcuDataMissingInSecond = new Dictionary<String, EcuData>();
+
             SubsystemDataComparisonResult = new List<EcuDataComparisonResult>();
+            SubsystemEcuDataMissingInFirst = new Dictionary<String, EcuData>();
+            SubsystemEcuDataMissingInSecond = new Dictionary<String, EcuData>();
         }
 
-        public bool IsEmpty => MasterDataMissingInFirst.Count == 0 && MasterDataMissingInSecond.Count == 0 && MasterDataComparisonResult.Count == 0 &&
-            SubsystemDataMissingInFirst?.Count == 0 && SubsystemDataMissingInSecond?.Count == 0 && SubsystemDataComparisonResult?.Count == 0;
+        [JsonIgnore]
+        public bool IsEmpty => MasterEcuDataMissingInFirst.Count == 0 && MasterEcuDataMissingInSecond.Count == 0 && MasterDataComparisonResult.Count == 0 &&
+            SubsystemEcuDataMissingInFirst?.Count == 0 && SubsystemEcuDataMissingInSecond?.Count == 0 && SubsystemDataComparisonResult?.Count == 0;
     }
 
 
 
     public class EcuDataComparisonResult
     {
-        public List<String> FieldsMissingInSecond { get; set; }
-        public List<String> FieldsMissingInFirst { get; set; }
+        public Dictionary<String, ValueItem> FieldsMissingInFirst { get; set; }
+        public Dictionary<String, ValueItem> FieldsMissingInSecond { get; set; }
 
         public List<DifferenceMessage> Messages { get; set; }
+
+        [JsonIgnore]
         public EcuData First { get; set; }
+        [JsonIgnore]
         public EcuData Second { get; set; }
 
 
         public EcuDataComparisonResult()
         {
             Messages = new List<DifferenceMessage>();
+
+            FieldsMissingInFirst = new Dictionary<String, ValueItem>();
+            FieldsMissingInSecond = new Dictionary<String, ValueItem>();
         }
 
+        [JsonIgnore]
         public bool IsEmpty => FieldsMissingInFirst.Count == 0 && FieldsMissingInSecond.Count == 0 && Messages.Count == 0;
     }
 
@@ -445,8 +509,16 @@ namespace OdisBackupCompare
 
     public class DifferenceMessage
     {
-        public String Path { get; set; }
-        public String FieldName { get; set; }
+        public List<String> Path { get; set; }
+        public List<String> FieldDescriptions { get; set; }
+        public FieldPropertyEnum FieldProperty { get; set; }
         public String Message { get; set; }
+        public String ValueFirst { get; set; }
+        public String ValueSecond { get; set; }
+
+        public DifferenceMessage()
+        {
+            Path = new List<String>();
+        }
     }
 }

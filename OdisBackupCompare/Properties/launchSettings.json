@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "OdisBackupCompare": {
+      "commandName": "Project",
+      "commandLineArgs": "-i SampleXML\\\\FullBackup_PXC_WVWZZZAUZEW070736_20250315T173802.xml SampleXML\\FullBackup_PXC_WVWZZZAUZHP345715_20250912T154832.xml"
+    }
+  }
+}

@@ -4,7 +4,22 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
+
+	  <PublishSingleFile>true</PublishSingleFile>
+	  <Version>0.1.0</Version>
+	  <Authors>Federico Di Marco &lt;fededim@gmail.com&gt;</Authors>
+	  <Description>OdisBackupCompare is A tool for extracting the differences between two Volkswagen Odis XML backup files</Description>
+	  <Copyright>$([System.DateTime]::UtcNow.Year)</Copyright>
+	  <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+	  <PublishRepositoryUrl>true</PublishRepositoryUrl>
+	  <PackageProjectUrl>https://github.com/fededim/OdisBackupCompare</PackageProjectUrl>
+	  <Title>$(AssemblyName)</Title>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <PackageReference Include="Macross.Json.Extensions" Version="3.0.0" />
+  </ItemGroup>
 
   <ItemGroup>
     <None Update="SampleXML\FullBackup_PXC_WVWZZZAUZEW070736_20250315T173802.xml">
