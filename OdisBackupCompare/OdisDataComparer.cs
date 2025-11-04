@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.Json;
@@ -12,6 +13,10 @@ using System.Xml.Linq;
 
 namespace OdisBackupCompare
 {
+    public enum OutputFileFormatEnum { JSON, PDF };
+
+    public enum ComparisonOptionsEnum { Differences, DataMissingInFirstFile, DataMissingInSecondFile };
+
     public enum FieldPropertyEnum
     {
         [EnumMember(Value = "TI_NAME")]
@@ -52,12 +57,12 @@ namespace OdisBackupCompare
 
     public class OdisDataComparer
     {
-        protected OdisDataComparerSettings Settings { get; set; }
+        protected Options Settings { get; set; }
 
 
-        public OdisDataComparer(OdisDataComparerSettings settings = null)
+        public OdisDataComparer(Options settings)
         {
-            Settings = settings ?? new OdisDataComparerSettings();
+            Settings = settings ?? throw new ArgumentNullException("settings");
         }
 
 
@@ -65,7 +70,7 @@ namespace OdisBackupCompare
 
         public ComparisonResults CompareEcus(Dictionary<String, Ecu> firstSet, Dictionary<String, Ecu> secondSet)
         {
-            var result = new ComparisonResults();
+            var result = new ComparisonResults(Settings);
 
             result.EcusMissingInFirst = secondSet.Where(kvp => secondSet.Keys.Except(firstSet.Keys).Contains(kvp.Key)).ToDictionary();
             result.EcusMissingInSecond = firstSet.Where(kvp => firstSet.Keys.Except(secondSet.Keys).Contains(kvp.Key)).ToDictionary();
@@ -92,8 +97,8 @@ namespace OdisBackupCompare
             var ecuComparisonResult = new EcuComparisonResult();
 
             ecuComparisonResult.EcuId = first.EcuId;
-            ecuComparisonResult.First = first;
-            ecuComparisonResult.Second = second;
+            ecuComparisonResult.FirstEcu = first;
+            ecuComparisonResult.SecondEcu = second;
 
             // COMPARE MASTER DATA
             ecuComparisonResult.MasterEcuDataMissingInFirst = second.EcuMasters.FilterByPredicate(kvp => second.EcuMasters.Dictionary.Keys.Except(first.EcuMasters.Dictionary.Keys ?? EmptyStringList).Contains(kvp.Key), MeaningfulText.Map);
@@ -107,7 +112,7 @@ namespace OdisBackupCompare
 
                 var compareEcuDataResult = CompareEcuData(new List<String> { first.EcuId, MeaningfulText.Map(ecuMasterType) }, null, firstData, secondData);
                 if (!compareEcuDataResult.IsEmpty)
-                    ecuComparisonResult.MasterDataComparisonResult.Add(compareEcuDataResult);
+                    ecuComparisonResult.MasterEcuDataComparisonResult.Add(compareEcuDataResult);
             }
 
             // COMPARE SUBSYSTEM DATA
@@ -123,13 +128,13 @@ namespace OdisBackupCompare
                     var firstData = first.EcuSubsystems.Subsystems.Dictionary[ecuSubsystemType];
                     var secondData = second.EcuSubsystems.Subsystems.Dictionary[ecuSubsystemType];
 
-                    var descriptions = (String.IsNullOrWhiteSpace(firstData.TiName) && String.IsNullOrWhiteSpace(secondData.TiName))?
-                        new List<String> { $"{firstData.Values?.FirstOrDefault(v => v.TiName == "IDE00013")?.DisplayValue} - {firstData.Values?.FirstOrDefault(v => v.TiName == "IDE00007")?.DisplayValue}", $"{ secondData.Values?.FirstOrDefault(v => v.TiName == "IDE00013")?.DisplayValue } - { secondData.Values?.FirstOrDefault(v => v.TiName == "IDE00007")?.DisplayValue }" } :
+                    var descriptions = (String.IsNullOrWhiteSpace(firstData.TiName) && String.IsNullOrWhiteSpace(secondData.TiName)) ?
+                        new List<String> { $"{firstData.Values?.FirstOrDefault(v => v.TiName == "IDE00013")?.DisplayValue} - {firstData.Values?.FirstOrDefault(v => v.TiName == "IDE00007")?.DisplayValue}", $"{secondData.Values?.FirstOrDefault(v => v.TiName == "IDE00013")?.DisplayValue} - {secondData.Values?.FirstOrDefault(v => v.TiName == "IDE00007")?.DisplayValue}" } :
                         new List<String> { firstData.TiName, secondData.TiName };
 
                     var compareEcuDataResult = CompareEcuData(new List<String> { first.EcuId, "subsystem", MeaningfulText.Map(ecuSubsystemType) }, descriptions, firstData, secondData);
                     if (!compareEcuDataResult.IsEmpty)
-                        ecuComparisonResult.SubsystemDataComparisonResult.Add(compareEcuDataResult);
+                        ecuComparisonResult.SubsystemEcuDataComparisonResult.Add(compareEcuDataResult);
                 }
             }
 
@@ -181,7 +186,7 @@ namespace OdisBackupCompare
                         CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.TiValue, firstValue.TiValue, secondValue.TiValue);
 
                 // perform recursion of subvalues
-                if (firstValue.SubValues?.Count>0 || secondValue.SubValues?.Count > 0)
+                if (firstValue.SubValues?.Count > 0 || secondValue.SubValues?.Count > 0)
                     CompareValueItem(result, path, firstValue?.SubValues, secondValue?.SubValues);
             }
 
@@ -194,7 +199,7 @@ namespace OdisBackupCompare
             if (String.IsNullOrWhiteSpace(first) && String.IsNullOrWhiteSpace(second))
                 return false;
 
-            if (!Settings.FieldToBypassOnComparison.Contains(fieldProperty) && (
+            if (!Settings.BypassFields.Contains(fieldProperty) && (
                 (String.IsNullOrWhiteSpace(first) && !String.IsNullOrWhiteSpace(second)) ||
                 (!String.IsNullOrWhiteSpace(first) && String.IsNullOrWhiteSpace(second)) ||
                 (first != second)))

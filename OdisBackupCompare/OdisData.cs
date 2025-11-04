@@ -1,4 +1,5 @@
 ﻿using System.Net.WebSockets;
+using System.Text;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Xml.Serialization;
@@ -131,7 +132,7 @@ namespace OdisBackupCompare
 
     public static class MeaningfulText
     {
-        static Dictionary<string, string> RemapData = new Dictionary<string, string> {
+        public static Dictionary<string, string> RemapData = new Dictionary<string, string> {
             { "ident","Identification" },
             { "coding_read","Coding" },
             { "adaption_read","Adaptation" },
@@ -303,9 +304,11 @@ namespace OdisBackupCompare
         public String TesterOdxVariant { get; set; }
 
         [XmlElement("ecu_master")]
+        [JsonIgnore]
         public DictionaryList<EcuData, String> EcuMasters { get; set; } = new DictionaryList<EcuData, String>((el, uniqueIndex) => el.Type);
 
         [XmlElement("ecu_subsystem")]
+        [JsonIgnore]
         public EcuSubsystems EcuSubsystems { get; set; }
 
 
@@ -394,6 +397,40 @@ namespace OdisBackupCompare
 
         [XmlElement("values")]
         public DictionaryList<ValueItem, String> SubValues { get; set; } = new DictionaryList<ValueItem, String>((el, uniqueIndex) => $"{el.TiName ?? el.DisplayName}_{uniqueIndex}");
+
+        public String GetName()
+        {
+            if (!String.IsNullOrWhiteSpace(DisplayName))
+            {
+                if (!String.IsNullOrWhiteSpace(TiName))
+                    return $"{DisplayName} ({TiName})";
+                else
+                    return DisplayName;
+            }
+            else
+                return TiName;
+        }
+
+        public String GetValue()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            if (!String.IsNullOrWhiteSpace(BinValue))
+                sb.Append(BinValue);
+            else if (!String.IsNullOrWhiteSpace(HexValue))
+                sb.Append(HexValue);
+            else if (!String.IsNullOrWhiteSpace(DisplayValue))
+                sb.Append(DisplayValue);
+            else
+                sb.Append(TiValue);
+
+            if (!String.IsNullOrWhiteSpace(DisplayUnit))
+                sb.Append($"({DisplayUnit})");
+            else if (!String.IsNullOrWhiteSpace(TiUnit))
+                sb.Append($"({TiUnit})");
+
+            return sb.ToString();
+        }
     }
 
     [Serializable]
@@ -433,7 +470,7 @@ namespace OdisBackupCompare
     public class EcuSubsystems
     {
         [XmlElement("subsystem")]
-        public DictionaryList<EcuData, String> Subsystems { get; set; } = new DictionaryList<EcuData, String>((el, uniqueIndex) => $"{el.Type}_{el.TiName ?? el.Values.First(v => v.TiName == "MAS01171").DisplayValue}");
+        public DictionaryList<EcuData, String> Subsystems { get; set; } = new DictionaryList<EcuData, String>((el, uniqueIndex) => $"{el.TiName ?? el.Values.First(v => v.TiName == "MAS01171").DisplayValue}_{el.Type}");
     }
 
 

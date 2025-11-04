@@ -1,4 +1,6 @@
 ﻿using CommandLine;
+using QuestPDF.Fluent;
+using QuestPDF.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,10 +21,19 @@ namespace OdisBackupCompare
         [Option('i', "inputs", Required = true, HelpText = "Specifies the two input files to process separated by space", Min = 2, Max = 2)]
         public IEnumerable<string> Inputs { get; set; }
 
-        [Option('o', "outputfolder", Required = false, HelpText = "Specify the output folder where all the output files will be generated")]
+        [Option('e', "ecus", Required = false, HelpText = "Specify the ecu ids which must be compared")]
+        public IEnumerable<String> EcuIds { get; set; }
+
+        [Option('o', "outputformat", Required = false, HelpText = "Specify the file formats to genenerate as output containing the result of the comparison", Default = new OutputFileFormatEnum[] { OutputFileFormatEnum.JSON, OutputFileFormatEnum.PDF })]
+        public IEnumerable<OutputFileFormatEnum> OutputFormats { get; set; }
+
+        [Option('f', "outputfolder", Required = false, HelpText = "Specify the output folder where all the output files will be generated")]
         public String OutputFolder { get; set; }
 
-        [Option('b', "bypass", Required = false, HelpText = "Specifies one or more fields to be bypassed by the comparison separated by space", Default = new FieldPropertyEnum[] { FieldPropertyEnum.DisplayName })]
+        [Option('c', "comparisonoptions", Required = false, HelpText = "Specify what to compare")]
+        public IEnumerable<ComparisonOptionsEnum> ComparisonOptions { get; set; }
+
+        [Option('b', "bypass", Required = false, HelpText = "Specifies one or more field types to be bypassed by the comparison separated by space", Default = new FieldPropertyEnum[] { FieldPropertyEnum.DisplayName })]
         public IEnumerable<FieldPropertyEnum> BypassFields { get; set; }
     }
 
@@ -47,21 +58,31 @@ namespace OdisBackupCompare
             var firstEcus = firstOdisData.GetEcus();
             var secondEcus = secondOdisData.GetEcus();
 
-            var odisDataComparer = new OdisDataComparer(new OdisDataComparerSettings { FieldToBypassOnComparison = o.BypassFields.ToList() });
+            var odisDataComparer = new OdisDataComparer(o);
 
-            var compareResult = odisDataComparer.CompareEcus(firstEcus, secondEcus);
+            var comparisonResult = odisDataComparer.CompareEcus(firstEcus, secondEcus);
 
-            var outFile = Path.Combine(o.OutputFolder ?? ".", "OdisBackupCompare.json");
+            var outFolder = o.OutputFolder ?? ".";
+            var outFilename = $"OdisBackupCompare_{comparisonResult.Timestamp.ToString("yyyy-MM-ddTHH_mm_ss_ffff")}";
 
-            var jsonSerializerOptions = new JsonSerializerOptions
+            if (!o.OutputFormats.Any() || o.OutputFormats.Contains(OutputFileFormatEnum.JSON)) {
+                var jsonSerializerOptions = new JsonSerializerOptions
+                {
+                    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+                    WriteIndented = true,
+                    Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic)
+                };
+                jsonSerializerOptions.Converters.Add(new JsonStringEnumMemberConverter());
+
+                File.WriteAllText(Path.Combine(outFolder, $"{outFilename}.json"), JsonSerializer.Serialize(comparisonResult, jsonSerializerOptions));
+            }
+
+            if (!o.OutputFormats.Any() || o.OutputFormats.Contains(OutputFileFormatEnum.PDF))
             {
-                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
-                WriteIndented = true,
-                Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic)
-            };
-            jsonSerializerOptions.Converters.Add(new JsonStringEnumMemberConverter());
-
-            File.WriteAllText(outFile, JsonSerializer.Serialize(compareResult, jsonSerializerOptions));
+                QuestPDF.Settings.License = LicenseType.Community;
+                var pdfGenerator = new PdfGenerator(comparisonResult);
+                pdfGenerator.GeneratePdf(Path.Combine(outFolder, $"{outFilename}.pdf"));
+            }
         }
     }
 }
