@@ -1,12 +1,12 @@
-﻿using QuestPDF;
-using QuestPDF.Fluent;
+﻿using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using System.Text.RegularExpressions;
+using Fededim.OdisBackupCompare.Data;
 using System;
 using System.Collections.Generic;
-using System.Text.Json;
-using System.Text.RegularExpressions;
-using System.Xml.Linq;
+using System.Linq;
+using System.IO;
 
 namespace OdisBackupCompare
 {
@@ -43,7 +43,7 @@ namespace OdisBackupCompare
 
                         foreach (var ecuComparison in Results.EcusComparisonResult)
                         {
-                            if (options.CheckEnumerableOption(options.EcuIds, ecuComparison.FirstEcu.EcuId))
+                            if (options.CheckEcuIds(ecuComparison.FirstEcu.EcuId))
                             {
                                 AddEcuComparisonPage(column, new List<String> { $"ECU: {ecuComparison.FirstEcu.EcuId} ({ecuComparison.FirstEcu.EcuName})", $"ECU: {ecuComparison.SecondEcu.EcuId} ({ecuComparison.SecondEcu.EcuName})" }, ecuComparison);
                             }
@@ -191,31 +191,36 @@ namespace OdisBackupCompare
                         table.Cell().ColumnSpan(10).Element(DifferenceCellStyle).AlignLeft().Shrink().ShowEntire().Text($"{i++}: {difference.GetPathDisplayString()}").Bold();
                         //table.Cell().ColumnSpan(3).Element(DifferenceCellStyle).Shrink().ShowEntire().Text(difference.FieldDescriptions.Count > 1 ? difference.FieldDescriptions[1] : String.Empty);
                         //table.Cell().ColumnSpan(2).Element(DifferenceCellStyle).Shrink().ShowEntire().Text(JsonSerializer.Serialize(difference.FieldProperty, Options.JsonSerializerOptions));
-                        table.Cell().ColumnSpan(5).Element(DifferenceCellStyle).AlignCenter().Shrink().ShowEntire().Text(AddColoredText(difference.FirstValue, difference.SecondValue, Colors.Red.Medium));
-                        table.Cell().ColumnSpan(5).Element(DifferenceCellStyle).AlignCenter().Shrink().ShowEntire().Text(AddColoredText(difference.SecondValue, difference.FirstValue, Colors.Green.Medium));
+                        table.Cell().ColumnSpan(5).Element(DifferenceCellStyle).AlignCenter().Shrink().ShowEntire().Text(AddColoredText(difference.FirstValue, difference.SecondValue, difference.FieldParameters, Colors.Red.Medium));
+                        table.Cell().ColumnSpan(5).Element(DifferenceCellStyle).AlignCenter().Shrink().ShowEntire().Text(AddColoredText(difference.SecondValue, difference.FirstValue, difference.FieldParameters, Colors.Green.Medium));
                     }
                 }
             });
         }
 
 
-        protected Action<TextDescriptor> AddColoredText(String value1, String value2, Color color)
+        protected Action<TextDescriptor> AddColoredText(String value1, String value2, FieldParametersEnum fieldParameters, Color color)
         {
             return (text) =>
             {
-                for (int i = 0; i < value1?.Length; i++)
+                if (!fieldParameters.HasFlag(FieldParametersEnum.IsFreeText))
+                    text.Span(value1).FontColor(value1 != value2 ? color : Colors.Black);
+                else
                 {
-                    if (i >= (value2?.Length ?? 0))
+                    for (int i = 0; i < value1?.Length; i++)
                     {
-                        text.Span(value1[i].ToString()).FontColor(Colors.Blue.Medium);
-                    }
-                    else
-                    {
-                        var valueChar = value1[i];
-                        if (valueChar == value2[i])
-                            text.Span(valueChar.ToString()).FontColor(Colors.Black);
+                        if (i >= (value2?.Length ?? 0))
+                        {
+                            text.Span(value1[i].ToString()).FontColor(Colors.Blue.Medium);
+                        }
                         else
-                            text.Span(valueChar.ToString()).FontColor(color);
+                        {
+                            var valueChar = value1[i];
+                            if (valueChar == value2[i])
+                                text.Span(valueChar.ToString()).FontColor(Colors.Black);
+                            else
+                                text.Span(valueChar.ToString()).FontColor(color);
+                        }
                     }
                 }
             };

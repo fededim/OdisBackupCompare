@@ -1,61 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.Serialization;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using System.Xml.Linq;
+using Fededim.OdisBackupCompare.Data;
 
 namespace OdisBackupCompare
 {
-    public enum OutputFileFormatEnum { JSON, PDF };
-
-    public enum ComparisonOptionsEnum { Differences, DataMissingInFirstFile, DataMissingInSecondFile };
-
-    public enum FieldPropertyEnum
-    {
-        [EnumMember(Value = "TI_NAME")]
-        TiName,
-
-        [EnumMember(Value = "TI_UNIT")]
-        TiUnit,
-
-        [EnumMember(Value = "DISPLAY_NAME")]
-        DisplayName,
-
-        [EnumMember(Value = "DISPLAY_VALUE")]
-        DisplayValue,
-
-        [EnumMember(Value = "DISPLAY_UNIT")]
-        DisplayUnit,
-
-        [EnumMember(Value = "BIN_VALUE")]
-        BinValue,
-
-        [EnumMember(Value = "HEX_VALUE")]
-        HexValue,
-
-        [EnumMember(Value = "TI_VALUE")]
-        TiValue
-    };
-
-    public class OdisDataComparerSettings
-    {
-        public List<FieldPropertyEnum> FieldToBypassOnComparison { get; init; }
-
-        public OdisDataComparerSettings()
-        {
-            FieldToBypassOnComparison = new List<FieldPropertyEnum>();
-        }
-    }
-
-
     public class OdisDataComparer
     {
         protected Options Settings { get; set; }
@@ -80,7 +31,7 @@ namespace OdisBackupCompare
 
             foreach (var ecuId in firstSet.Keys.Intersect(secondSet.Keys))
             {
-                if (Settings.CheckEnumerableOption(Settings.EcuIds, ecuId))
+                if (Settings.CheckEcuIds(ecuId))
                 {
 
                     var firstEcu = firstSet[ecuId];
@@ -164,7 +115,7 @@ namespace OdisBackupCompare
                 throw new InvalidDataException($"TI_NAME: {first.TiName} is different from {second.TiName}!");
 
             if (Settings.CheckEnumerableOption(Settings.ComparisonOptions, ComparisonOptionsEnum.Differences))
-                CompareStrings(result.Differences, path, new List<String>(mainpath) { first.DisplayName, second.DisplayName }, FieldPropertyEnum.DisplayName, first.DisplayName, second.DisplayName);
+                CompareStrings(result.Differences, path, new List<String>(mainpath) { first.DisplayName, second.DisplayName }, FieldPropertyEnum.DisplayName, FieldParametersEnum.IsFreeText, first.DisplayName, second.DisplayName);
 
             CompareValueItem(result, mainpath, first?.Values, second?.Values);
 
@@ -192,14 +143,14 @@ namespace OdisBackupCompare
 
                 if (Settings.CheckEnumerableOption(Settings.ComparisonOptions, ComparisonOptionsEnum.Differences))
                 {
-                    CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.TiName, firstValue.TiName, secondValue.TiName);
-                    CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.TiUnit, firstValue.TiUnit, secondValue.TiUnit);
-                    CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.DisplayName, firstValue.DisplayName, secondValue.DisplayName);
-                    CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.DisplayValue, firstValue.DisplayValue, secondValue.DisplayValue);
-                    CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.DisplayUnit, firstValue.DisplayUnit, secondValue.DisplayUnit);
-                    if (!CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.BinValue, firstValue.BinValue, secondValue.BinValue))
-                        if (!CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.HexValue, firstValue.HexValue, secondValue.HexValue))
-                            CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.TiValue, firstValue.TiValue, secondValue.TiValue);
+                    CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.TiName, firstValue, secondValue);
+                    CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.TiUnit, firstValue, secondValue);
+                    CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.DisplayName, firstValue, secondValue);
+                    CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.DisplayValue, firstValue, secondValue);
+                    CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.DisplayUnit, firstValue, secondValue);
+                    if (!CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.BinValue, firstValue, secondValue))
+                        if (!CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.HexValue, firstValue, secondValue))
+                            CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.TiValue, firstValue, secondValue);
                 }
 
                 // perform recursion of subvalues
@@ -210,18 +161,60 @@ namespace OdisBackupCompare
         }
 
 
-
-        public bool CompareStrings(List<DifferenceMessage> errors, List<String> path, List<String> fieldDescriptions, FieldPropertyEnum fieldProperty, String first, String second)
+        protected Dictionary<FieldPropertyEnum, Func<ValueItem, String>> MappingDictionary { get; } = new Dictionary<FieldPropertyEnum, Func<ValueItem, string>>
         {
-            if (String.IsNullOrWhiteSpace(first) && String.IsNullOrWhiteSpace(second))
+            { FieldPropertyEnum.TiName, vi => vi.TiName },
+            { FieldPropertyEnum.TiUnit, vi => vi.TiUnit },
+            { FieldPropertyEnum.DisplayName, vi => vi.DisplayName },
+            { FieldPropertyEnum.DisplayValue, vi => vi.DisplayValue },
+            { FieldPropertyEnum.DisplayUnit, vi => vi.DisplayUnit },
+            { FieldPropertyEnum.BinValue, vi => vi.BinValue },
+            { FieldPropertyEnum.HexValue, vi => vi.HexValue },
+            { FieldPropertyEnum.TiValue, vi => vi.TiValue }
+        };
+
+
+        public bool CompareStrings(List<DifferenceMessage> errors, List<String> path, List<String> fieldDescriptions, FieldPropertyEnum fieldProperty, ValueItem first, ValueItem second)
+        {
+            var projectionFunction = MappingDictionary[fieldProperty];
+
+            var firstValue = projectionFunction(first);
+            var secondValue = projectionFunction(second);
+
+            return CompareStrings(errors, path, fieldDescriptions, fieldProperty, first.FieldParameters(fieldProperty), firstValue, secondValue);
+        }
+
+
+
+        public bool CompareStrings(List<DifferenceMessage> errors, List<String> path, List<String> fieldDescriptions, FieldPropertyEnum fieldProperty, FieldParametersEnum fieldParameters, String firstValue, String secondValue)
+        {
+            //double? firstNumericValue = null;
+            //double? secondNumericValue = null;
+
+            if (Settings.CheckEnumerableOption(Settings.BypassFields, fieldProperty))
                 return false;
 
-            if (!Settings.CheckEnumerableOption(Settings.BypassFields,fieldProperty) && (
-                (String.IsNullOrWhiteSpace(first) && !String.IsNullOrWhiteSpace(second)) ||
-                (!String.IsNullOrWhiteSpace(first) && String.IsNullOrWhiteSpace(second)) ||
-                (first != second)))
+            if (String.IsNullOrWhiteSpace(firstValue) && String.IsNullOrWhiteSpace(secondValue))
+                return false;
+
+            // TODO: IMPROVE CHECK ON DECIMAL SEPARATOR IS IMPOSSIBLE FOR NOW, ODIS XML FILE DOES NOT STORE THE INVARIANT CULTURE VALUE, BUT ALWAYS CULTURE DEPENDANT VALUES
+            // LEAVING CODE JUST IN CASE IN FUTURE SOMETHING IMPROVES
+            //if (Settings.UseInvariantCulture && fieldParameters.HasFlag(FieldParametersEnum.IsNumerical))
+            //{
+            //    if (Double.TryParse(firstValue, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var firstDouble))
+            //        firstNumericValue = firstDouble;
+            //    if (Double.TryParse(secondValue, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var secondDouble))
+            //        secondNumericValue = secondDouble;
+
+            //    if (firstNumericValue != null && secondNumericValue != null && firstNumericValue == secondNumericValue)
+            //        return false;
+            //}
+
+            if ((String.IsNullOrWhiteSpace(firstValue) && !String.IsNullOrWhiteSpace(secondValue)) ||
+                (!String.IsNullOrWhiteSpace(firstValue) && String.IsNullOrWhiteSpace(secondValue)) ||
+                firstValue != secondValue)
             {
-                errors.Add(new DifferenceMessage { Path = path, FieldDescriptions = fieldDescriptions, FieldProperty = fieldProperty, Message = $"{first} is different from {second}", FirstValue = first, SecondValue = second });
+                errors.Add(new DifferenceMessage { Path = path, FieldDescriptions = fieldDescriptions, FieldProperty = fieldProperty, FieldParameters = fieldParameters, FirstValue = firstValue, SecondValue = secondValue });
                 return true;
             }
 

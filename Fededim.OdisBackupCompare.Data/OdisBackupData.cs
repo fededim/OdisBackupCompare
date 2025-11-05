@@ -1,12 +1,118 @@
-﻿using System;
+﻿using CommandLine;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
+using System.Text.Unicode;
 using System.Threading.Tasks;
 
-namespace OdisBackupCompare
+namespace Fededim.OdisBackupCompare.Data
 {
+    public enum OutputFileFormatEnum { JSON, PDF };
+
+    public enum ComparisonOptionsEnum { Differences, DataMissingInFirstFile, DataMissingInSecondFile };
+
+    [Flags]
+    public enum FieldParametersEnum { IsFreeText = 1, IsNumerical = 2 }
+
+    public enum FieldPropertyEnum
+    {
+        [EnumMember(Value = "TI_NAME")]
+        TiName,
+
+        [EnumMember(Value = "TI_UNIT")]
+        TiUnit,
+
+        [EnumMember(Value = "DISPLAY_NAME")]
+        DisplayName,
+
+        [EnumMember(Value = "DISPLAY_VALUE")]
+        DisplayValue,
+
+        [EnumMember(Value = "DISPLAY_UNIT")]
+        DisplayUnit,
+
+        [EnumMember(Value = "BIN_VALUE")]
+        BinValue,
+
+        [EnumMember(Value = "HEX_VALUE")]
+        HexValue,
+
+        [EnumMember(Value = "TI_VALUE")]
+        TiValue
+    };
+
+
+    public class Options
+    {
+        [Option('j', "inputjson", Required = true, HelpText = "Specifies the two input files to process separated by space", SetName = "input_json")]
+        public String InputJson { get; set; }
+
+        [Option('i', "inputs", Required = true, HelpText = "Specifies the two input files to process separated by space", Min = 2, Max = 2, SetName = "input_xml")]
+        public IEnumerable<string> Inputs { get; set; }
+
+        [Option('e', "ecus", Required = false, HelpText = "Specify the ecu ids which must be compared")]
+        public IEnumerable<String> EcuIds { get; set; }
+
+        [Option('m', "outputformat", Required = false, HelpText = "Specify the file formats to genenerate as output containing the result of the comparison", Default = new OutputFileFormatEnum[] { OutputFileFormatEnum.JSON, OutputFileFormatEnum.PDF })]
+        public IEnumerable<OutputFileFormatEnum> OutputFormats { get; set; }
+
+        [Option('f', "outputfolder", Required = false, HelpText = "Specify the output folder where all the output files will be generated")]
+        public String OutputFolder { get; set; }
+
+        [Option('o', "comparisonoptions", Required = false, HelpText = "Specify what to compare")]
+        public IEnumerable<ComparisonOptionsEnum> ComparisonOptions { get; set; }
+
+        [Option('b', "bypass", Required = false, HelpText = "Specifies one or more field types to be bypassed by the comparison separated by space", Default = new FieldPropertyEnum[] { FieldPropertyEnum.DisplayName, FieldPropertyEnum.TiValue })]
+        public IEnumerable<FieldPropertyEnum> BypassFields { get; set; }
+
+        //[Option('u', "invariantculture", Required = false, HelpText = "Specifies the use of invariant culture when comparing numeric fields to reduce the number of differences due to number culture-specific separators")]
+        //public bool UseInvariantCulture { get; set; }
+
+        public static JsonSerializerOptions JsonSerializerOptions { get; set; }
+
+
+        public bool CheckEnumerableOption<T>(IEnumerable<T> options, T value)
+        {
+            return (options == null || !options.Any() || options.Contains(value));
+        }
+
+        public bool CheckEcuIds(string ecuId)
+        {
+            return (EcuIds == null || !EcuIds.Any() || EcuIds.Any(e => ecuId.Contains(e, StringComparison.InvariantCultureIgnoreCase)));
+        }
+
+
+        static Options()
+        {
+            JsonSerializerOptions = new JsonSerializerOptions
+            {
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+                WriteIndented = true,
+                Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic),
+                TypeInfoResolver = new DictionaryListTypeInfoResolver()
+                //TypeInfoResolver = new DefaultJsonTypeInfoResolver().WithAddedModifier(typeInfo =>
+                //{
+                //    // 3. Check the type and apply changes
+                //    if (typeInfo.Type == typeof(List<>))
+                //    {
+                //        typeInfo.PolymorphismOptions.DerivedTypes.Add(new JsonDerivedType(typeof(DictionaryList<,>)));
+                //    }
+                //})
+            };
+
+            JsonSerializerOptions.Converters.Add(new JsonStringEnumMemberConverter());
+        }
+    }
+
+
+
     public class ComparisonResults
     {
         public DateTime Timestamp { get; }
@@ -103,12 +209,12 @@ namespace OdisBackupCompare
     }
 
 
-
     public class DifferenceMessage
     {
         public List<String> Path { get; set; }
         public List<String> FieldDescriptions { get; set; }
         public FieldPropertyEnum FieldProperty { get; set; }
+        public FieldParametersEnum FieldParameters { get; set; }
         public String Message { get; set; }
         public String FirstValue { get; set; }
         public String SecondValue { get; set; }

@@ -1,11 +1,31 @@
-﻿using System.Net.WebSockets;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net.WebSockets;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using System.Text.RegularExpressions;
 using System.Xml.Serialization;
 
-namespace OdisBackupCompare
+namespace Fededim.OdisBackupCompare.Data
 {
+    public class DictionaryListTypeInfoResolver : DefaultJsonTypeInfoResolver
+    {
+        public override JsonTypeInfo GetTypeInfo(Type type, JsonSerializerOptions options)
+        {
+            if (type.Name.StartsWith("DictionaryList"))
+                type = type.BaseType;
+
+            return base.GetTypeInfo(type, options);
+        }
+
+    }
+
+
+
     public class DictionaryList<T, TKey> : List<T>
     {
         protected Dictionary<TKey, T> _dictionaryLookup { get; set; }
@@ -15,9 +35,6 @@ namespace OdisBackupCompare
         {
             ProjectionFunction = projectionFunction;
         }
-
-
-
 
 
         [JsonIgnore]
@@ -367,6 +384,7 @@ namespace OdisBackupCompare
         }
     }
 
+
     [Serializable]
     [XmlInclude(typeof(ValueItem))]
     public class ValueItem
@@ -396,7 +414,7 @@ namespace OdisBackupCompare
         public String DisplayUnit { get; set; }
 
         [XmlElement("values")]
-        public DictionaryList<ValueItem, String> SubValues { get; set; } = new DictionaryList<ValueItem, String>((el, uniqueIndex) => (uniqueIndex > 1) ? $"{el.TiName ?? el.DisplayName}_{uniqueIndex}": $"{el.TiName ?? el.DisplayName}");
+        public DictionaryList<ValueItem, String> SubValues { get; set; } = new DictionaryList<ValueItem, String>((el, uniqueIndex) => (uniqueIndex > 1) ? $"{el.TiName ?? el.DisplayName}_{uniqueIndex}" : $"{el.TiName ?? el.DisplayName}");
 
         public String GetName()
         {
@@ -431,7 +449,24 @@ namespace OdisBackupCompare
 
             return sb.ToString();
         }
+
+
+
+        public FieldParametersEnum FieldParameters(FieldPropertyEnum fieldProperty)
+        {
+            FieldParametersEnum result = 0;
+
+            if (String.IsNullOrWhiteSpace(TiValue))
+                result |= FieldParametersEnum.IsFreeText;
+
+            if (!String.IsNullOrWhiteSpace(TiUnit) && fieldProperty == FieldPropertyEnum.DisplayValue)
+                result |= FieldParametersEnum.IsNumerical;
+
+            return result;
+        }
     }
+
+
 
     [Serializable]
     [XmlInclude(typeof(SwapStateFunctionsUds))]
