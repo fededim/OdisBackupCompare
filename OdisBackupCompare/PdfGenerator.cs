@@ -288,12 +288,12 @@ namespace OdisBackupCompare
                      {
                          if (valueItem.SubValues?.Count > 0)
                          {
-                             table.Cell().Element(CellStyle).AlignCenter().Shrink().ShowEntire().Text($"{i++}: {valueItem.GetName()}").Bold();
+                             table.Cell().Element(CellStyle).AlignLeft().Shrink().ShowEntire().Text($"{i++}: {valueItem.GetName()}").Bold();
                              AddValueItemDataOnContainer(table.Cell().Element(CellStyle).AlignCenter(), new List<string>(), valueItem.SubValues.Dictionary);
                          }
                          else
                          {
-                             table.Cell().Element(CellStyle).AlignCenter().Shrink().ShowEntire().Text($"{i++}: {valueItem.GetName()}").Bold();
+                             table.Cell().Element(CellStyle).AlignLeft().Shrink().ShowEntire().Text($"{i++}: {valueItem.GetName()}").Bold();
                              table.Cell().Element(CellStyle).AlignCenter().Shrink().ShowEntire().Text(valueItem.GetValue());
                          }
                      }
