@@ -13,7 +13,7 @@ It can be used to check the differences of information, codings and adaptations 
     1. Click button "Read Data"
 - If you do not have already, [install .NET 8.0 framework runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0).
 
-**OdisBackupCompare** consists of a single executable and it is available for **Windows, Linux, Mac X64/ARM64** (it has been developed with Microsoft .NET). Download the latest archive [from realeases](https://github.com/fededim/OdisBackupCompare/releases) and decompress it whenever you want. You must have installed .NET 8.0 to execute it from command prompt / shell.
+**OdisBackupCompare** consists of a single executable and it is available for **Windows, Linux, Mac X64/ARM64** (it has been developed with Microsoft .NET). Download the latest archive [from releases](https://github.com/fededim/OdisBackupCompare/releases) and decompress it whenever you want. You must have installed .NET 8.0 to execute it from command prompt / shell.
 
 Two samples ODIS XML backup files (one is from my car) are provided in the archive folder **SampleXML**.
 
@@ -70,10 +70,10 @@ OdisBackupCompare -i &lt;path to XML file1&gt; &lt;path to XML file2&gt; -o Data
 OdisBackupCompare -j &lt;path to JSON file&gt; -e 44
 
 **Compare two Odis XML files and generate all output files (JSON/PDF) bypassing the comparison on DisplayValue fields**<br/>
-(this is an expert function whick skips the checks on some fields of the XML file, probably you will never have to use it, I used it to during development to get out the most significant differences. In fact by default the field DisplayName is skipped because Odis is localized and if you happen to have two Odis XML files generated with different locale setting [e.g. English-Russian] the program could output a lot differences)<br/><br/>
+(this is an expert function whick skips the checks on some fields of the XML file, probably you will never have to use it, I used it to during development to get out the most significant differences. In fact, by default the field DisplayName is skipped because Odis is localized and if you happen to have two Odis XML files generated with different locale setting [e.g. English-Russian] the program could output a lot differences)<br/><br/>
 OdisBackupCompare -i &lt;path to XML file1&gt; &lt;path to XML file2&gt; -b DisplayValue
 
-# Sample PDF generated using the backup of my car (all control unit 280 pages!)
+# Sample PDF generated using the backup of my car (all control units compared in 280 pages!)
 [Download here from GitHub](https://raw.githubusercontent.com/fededim/OdisBackupCompare/main/OdisBackupCompare/SampleXML/OdisBackupCompare_output_sample.pdf)
 
 The full unfiltered PDF is composed of these sections:

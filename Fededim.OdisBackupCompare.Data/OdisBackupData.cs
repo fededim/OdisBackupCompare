@@ -56,7 +56,7 @@ namespace Fededim.OdisBackupCompare.Data
         [Option('e', "ecus", Required = false, HelpText = "Specify the ecu ids which must be compared")]
         public IEnumerable<String> EcuIds { get; set; }
 
-        [Option('m', "outputformat", Required = false, HelpText = "Specify the file formats to genenerate as output containing the result of the comparison", Default = new OutputFileFormatEnum[] { OutputFileFormatEnum.JSON, OutputFileFormatEnum.PDF })]
+        [Option('m', "outputformat", Required = false, HelpText = "Specify the file formats to generate as output containing the result of the comparison", Default = new OutputFileFormatEnum[] { OutputFileFormatEnum.JSON, OutputFileFormatEnum.PDF })]
         public IEnumerable<OutputFileFormatEnum> OutputFormats { get; set; }
 
         [Option('f', "outputfolder", Required = false, HelpText = "Specify the output folder where all the output files will be generated")]
