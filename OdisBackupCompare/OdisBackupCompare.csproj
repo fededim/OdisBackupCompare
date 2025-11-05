@@ -5,7 +5,7 @@
 		<TargetFramework>net8.0</TargetFramework>
 		<ImplicitUsings>disable</ImplicitUsings>
 
-		<Version>1.0.0</Version>
+		<Version>1.0.1</Version>
 		<Authors>Federico Di Marco &lt;fededim@gmail.com&gt;</Authors>
 		<Description>OdisBackupCompare is a tool for extracting the differences between two Volkswagen Odis XML backup files and exporting them in various formats (JSON/PDF).</Description>
 		<Copyright>$([System.DateTime]::UtcNow.Year) Federico Di Marco &lt;fededim@gmail.com&gt;</Copyright>
@@ -26,6 +26,9 @@
 		<PackageReleaseNotes>
 			v1.0.0
 			- Initial version
+
+			v1.0.1
+			- Bugfix on layout of missing field and fixed typo in help text			
 		</PackageReleaseNotes>
 
 	</PropertyGroup>
