@@ -1,4 +1,6 @@
 ﻿using CommandLine;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,9 +8,6 @@ using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.Encodings.Web;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.Json.Serialization.Metadata;
 using System.Text.Unicode;
 using System.Threading.Tasks;
 
@@ -64,7 +63,7 @@ namespace Fededim.OdisBackupCompare.Data
         public IEnumerable<OutputFileFormatEnum> OutputFormats { get; set; }
 
         [Option('f', "outputfolder", Required = false, HelpText = "Specify the output folder where all the output files will be generated")]
-        public String OutputFolder { get; set; }
+        public String Output { get; set; }
 
         [Option('o', "comparisonoptions", Required = false, HelpText = "Specify what to compare")]
         public IEnumerable<ComparisonOptionsEnum> ComparisonOptions { get; set; }
@@ -75,7 +74,7 @@ namespace Fededim.OdisBackupCompare.Data
         //[Option('u', "invariantculture", Required = false, HelpText = "Specifies the use of invariant culture when comparing numeric fields to reduce the number of differences due to number culture-specific separators")]
         //public bool UseInvariantCulture { get; set; }
 
-        public static JsonSerializerOptions JsonSerializerOptions { get; set; }
+        public static JsonSerializerSettings JsonSerializerOptions { get; set; }
 
 
         public bool CheckEnumerableOption<T>(IEnumerable<T> options, T value)
@@ -91,23 +90,13 @@ namespace Fededim.OdisBackupCompare.Data
 
         static Options()
         {
-            JsonSerializerOptions = new JsonSerializerOptions
+            JsonSerializerOptions = new JsonSerializerSettings
             {
-                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
-                WriteIndented = true,
-                Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic),
-                TypeInfoResolver = new DictionaryListTypeInfoResolver()
-                //TypeInfoResolver = new DefaultJsonTypeInfoResolver().WithAddedModifier(typeInfo =>
-                //{
-                //    // 3. Check the type and apply changes
-                //    if (typeInfo.Type == typeof(List<>))
-                //    {
-                //        typeInfo.PolymorphismOptions.DerivedTypes.Add(new JsonDerivedType(typeof(DictionaryList<,>)));
-                //    }
-                //})
+                NullValueHandling = NullValueHandling.Ignore,
+                Formatting = Formatting.Indented
             };
 
-            JsonSerializerOptions.Converters.Add(new JsonStringEnumMemberConverter());
+            JsonSerializerOptions.Converters.Add(new StringEnumConverter());
         }
     }
 
@@ -115,21 +104,22 @@ namespace Fededim.OdisBackupCompare.Data
 
     public class ComparisonResults
     {
-        public DateTime Timestamp { get; }
+        public DateTime Timestamp { get; set; }
         public Options Options { get; set; }
 
         public Dictionary<String, Ecu> EcusMissingInFirst { get; set; }
         public Dictionary<String, Ecu> EcusMissingInSecond { get; set; }
 
-        public DictionaryList<EcuComparisonResult, String> EcusComparisonResult { get; set; }
+        public DictionaryList<EcuComparisonResult> EcusComparisonResult { get; set; } = new DictionaryList<EcuComparisonResult>((ecu, uniqueIndex) => ecu.EcuId);
 
+        public ComparisonResults()
+        {
+            EcusMissingInFirst = new Dictionary<String, Ecu>();
+            EcusMissingInSecond = new Dictionary<String, Ecu>();
+        }
 
         public ComparisonResults(Options options)
         {
-            EcusComparisonResult = new DictionaryList<EcuComparisonResult, String>((ecu, uniqueIndex) => ecu.EcuId);
-            EcusMissingInFirst = new Dictionary<String, Ecu>();
-            EcusMissingInSecond = new Dictionary<String, Ecu>();
-
             Timestamp = DateTime.Now;
             Options = options;
         }

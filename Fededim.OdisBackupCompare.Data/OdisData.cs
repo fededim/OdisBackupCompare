@@ -1,54 +1,44 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.Json.Serialization.Metadata;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using System.Xml.Serialization;
 
 namespace Fededim.OdisBackupCompare.Data
 {
-    public class DictionaryListTypeInfoResolver : DefaultJsonTypeInfoResolver
+    public class DictionaryList<T> : List<T>
     {
-        public override JsonTypeInfo GetTypeInfo(Type type, JsonSerializerOptions options)
-        {
-            if (type.Name.StartsWith("DictionaryList"))
-                type = type.BaseType;
+        protected Dictionary<String, T> _dictionaryLookup { get; set; }
+        protected Func<T, int, String> ProjectionFunction { get; set; }
 
-            return base.GetTypeInfo(type, options);
+        public DictionaryList():base()
+        {           
         }
 
-    }
-
-
-
-    public class DictionaryList<T, TKey> : List<T>
-    {
-        protected Dictionary<TKey, T> _dictionaryLookup { get; set; }
-        protected Func<T, int, TKey> ProjectionFunction { get; set; }
-
-        public DictionaryList(Func<T, int, TKey> projectionFunction) : base()
+        public DictionaryList(Func<T, int, String> projectionFunction) : base()
         {
             ProjectionFunction = projectionFunction;
         }
 
 
         [JsonIgnore]
-        public Dictionary<TKey, T> Dictionary
+        public Dictionary<String, T> Dictionary
         {
             get
             {
                 if (_dictionaryLookup == null)
                 {
-                    _dictionaryLookup = new Dictionary<TKey, T>();
+                    _dictionaryLookup = new Dictionary<String, T>();
                     foreach (var el in this)
                     {
                         // to force an unique key since in the gateways there are repeated values for the same ti_name (e.g. SFT0004B)
-                        TKey key;
+                        String key;
                         var i = 1;
                         do
                         {
@@ -65,12 +55,12 @@ namespace Fededim.OdisBackupCompare.Data
         }
 
 
-        public Dictionary<TKey, T> FilterByPredicate(Predicate<KeyValuePair<TKey, T>> predicate, Func<TKey, TKey> keyBeautify = null)
+        public Dictionary<String, T> FilterByPredicate(Predicate<KeyValuePair<String, T>> predicate, Func<String, String> keyBeautify = null)
         {
             var result = Dictionary.Where(kvp => predicate(kvp));
 
             if (keyBeautify != null)
-                result = result.Select(kvp => new KeyValuePair<TKey, T>(keyBeautify(kvp.Key), kvp.Value));
+                result = result.Select(kvp => new KeyValuePair<String, T>(keyBeautify(kvp.Key), kvp.Value));
 
             return result.ToDictionary();
         }
@@ -252,10 +242,10 @@ namespace Fededim.OdisBackupCompare.Data
     public class Vehicle
     {
         [XmlElement("vehicle_data")]
-        public DictionaryList<NameValueData, String> VehicleData { get; set; } = new DictionaryList<NameValueData, String>((el, uniqueIndex) => el.DisplayName);
+        public DictionaryList<NameValueData> VehicleData { get; set; } = new DictionaryList<NameValueData>((el, uniqueIndex) => el.DisplayName);
 
         [XmlElement("odx_info")]
-        public DictionaryList<NameValueData, String> OdxInfo { get; set; } = new DictionaryList<NameValueData, String>((el, uniqueIndex) => el.DisplayName);
+        public DictionaryList<NameValueData> OdxInfo { get; set; } = new DictionaryList<NameValueData>((el, uniqueIndex) => el.DisplayName);
 
         [XmlElement("communications")]
         public List<Communication> Communications { get; set; }
@@ -322,7 +312,7 @@ namespace Fededim.OdisBackupCompare.Data
 
         [XmlElement("ecu_master")]
         [JsonIgnore]
-        public DictionaryList<EcuData, String> EcuMasters { get; set; } = new DictionaryList<EcuData, String>((el, uniqueIndex) => el.Type);
+        public DictionaryList<EcuData> EcuMasters { get; set; } = new DictionaryList<EcuData>((el, uniqueIndex) => el.Type);
 
         [XmlElement("ecu_subsystem")]
         [JsonIgnore]
@@ -373,7 +363,7 @@ namespace Fededim.OdisBackupCompare.Data
         public String TiName { get; set; }
 
         [XmlElement("values")]
-        public DictionaryList<ValueItem, String> Values { get; set; } = new DictionaryList<ValueItem, String>((el, uniqueIndex) => el.TiName ?? el.DisplayName);
+        public DictionaryList<ValueItem> Values { get; set; } = new DictionaryList<ValueItem>((el, uniqueIndex) => el.TiName ?? el.DisplayName);
 
         [XmlElement("swap_fod_status")]
         public SwapFodStatus SwapFodStatus { get; set; }
@@ -414,7 +404,7 @@ namespace Fededim.OdisBackupCompare.Data
         public String DisplayUnit { get; set; }
 
         [XmlElement("values")]
-        public DictionaryList<ValueItem, String> SubValues { get; set; } = new DictionaryList<ValueItem, String>((el, uniqueIndex) => (uniqueIndex > 1) ? $"{el.TiName ?? el.DisplayName}_{uniqueIndex}" : $"{el.TiName ?? el.DisplayName}");
+        public DictionaryList<ValueItem> SubValues { get; set; } = new DictionaryList<ValueItem>((el, uniqueIndex) => (uniqueIndex > 1) ? $"{el.TiName ?? el.DisplayName}_{uniqueIndex}" : $"{el.TiName ?? el.DisplayName}");
 
         public String GetName()
         {
@@ -505,7 +495,7 @@ namespace Fededim.OdisBackupCompare.Data
     public class EcuSubsystems
     {
         [XmlElement("subsystem")]
-        public DictionaryList<EcuData, String> Subsystems { get; set; } = new DictionaryList<EcuData, String>((el, uniqueIndex) => $"{el.TiName ?? el.Values.First(v => v.TiName == "MAS01171").DisplayValue}_{el.Type}");
+        public DictionaryList<EcuData> Subsystems { get; set; } = new DictionaryList<EcuData>((el, uniqueIndex) => $"{el.TiName ?? el.Values.First(v => v.TiName == "MAS01171").DisplayValue}_{el.Type}");
     }
 
 

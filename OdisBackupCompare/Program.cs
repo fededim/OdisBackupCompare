@@ -1,19 +1,24 @@
 ﻿using CommandLine;
 using CommandLine.Text;
 using Fededim.OdisBackupCompare.Data;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using NReco.Logging.File;
+using QuestPDF;
 using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
 using System;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
 
 namespace OdisBackupCompare
 {
     public class Program
     {
         public static void Main(string[] args)
-        {
+        {           
             var parser = new CommandLine.Parser(with => with.HelpWriter = null);
             var parserResult = parser.ParseArguments<Options>(args);
 
@@ -37,10 +42,32 @@ namespace OdisBackupCompare
 
         private static int CompareOdisXMLFiles(Options o)
         {
+            var host = Host.CreateDefaultBuilder().ConfigureServices((context, services) =>
+            {
+                services.AddTransient<OdisDataComparer>(sp => new OdisDataComparer(o, sp.GetRequiredService<ILogger<OdisDataComparer>>()));
+            })
+            .ConfigureLogging((context,loggerBuilder) =>
+            {
+                loggerBuilder
+                .AddDebug()
+                .AddConsole()
+                .AddFile("app.log", append: true);
+            }).Build();
+
+            var logger = host.Services.GetRequiredService<ILogger<Program>>();
+
             ComparisonResults comparisonResult = null;
             if (!String.IsNullOrEmpty(o.InputJson))
             {
-                comparisonResult = JsonSerializer.Deserialize<ComparisonResults>(File.ReadAllText(o.InputJson), Options.JsonSerializerOptions);
+                comparisonResult = JsonConvert.DeserializeObject<ComparisonResults>(File.ReadAllText(o.InputJson), Options.JsonSerializerOptions);
+
+                comparisonResult.Options.OutputFormats = o.OutputFormats;
+                comparisonResult.Options.Output = o.Output;
+                comparisonResult.Options.ComparisonOptions = o.ComparisonOptions;
+                comparisonResult.Options.EcuIds = comparisonResult.Options.EcuIds?.Count()>0 ? comparisonResult.Options.EcuIds.Intersect(o.EcuIds) : o.EcuIds;
+                comparisonResult.Options.BypassFields = comparisonResult.Options.BypassFields.Union(o.BypassFields);
+
+                logger.LogInformation($"Successfully read file {o.InputJson}");
             }
             else
             {
@@ -52,24 +79,45 @@ namespace OdisBackupCompare
                 var firstEcus = firstOdisData.GetEcus();
                 var secondEcus = secondOdisData.GetEcus();
 
-                var odisDataComparer = new OdisDataComparer(o);
+                var odisDataComparer = host.Services.GetRequiredService<OdisDataComparer>();
 
                 comparisonResult = odisDataComparer.CompareEcus(firstEcus, secondEcus);
+
+                logger.LogInformation($"Successfully compared the ODIS XML files {inputFiles[0]} and {inputFiles[1]}");
             }
 
-            var outFolder = o.OutputFolder ?? ".";
-            var outFilename = $"OdisBackupCompare_{comparisonResult.Timestamp.ToString("yyyy-MM-ddTHH_mm_ss_ffff")}";
+            var outFolder = o.Output ?? ".";
+            var outFilename = $"OdisBackupCompare_{DateTime.Now.ToString("yyyy-MM-ddTHH_mm_ss_ffff")}";
+
+            String outJsonFilename = null;
+            String outPdfFilename = null;
+            if (Directory.Exists(outFolder)) {
+                outJsonFilename = Path.Combine(outFolder, $"{outFilename}.json");
+                outPdfFilename = Path.Combine(outFolder, $"{outFilename}.pdf");
+            }
+            else
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(outFolder));
+                outJsonFilename = Path.ChangeExtension(outFolder,".json");
+                outPdfFilename = Path.ChangeExtension(outFolder, ".pdf");
+            }
 
             if (o.CheckEnumerableOption(o.OutputFormats, OutputFileFormatEnum.JSON) && String.IsNullOrEmpty(o.InputJson))
             {
-                File.WriteAllText(Path.Combine(outFolder, $"{outFilename}.json"), JsonSerializer.Serialize(comparisonResult, Options.JsonSerializerOptions));
+
+                File.WriteAllText(outJsonFilename, JsonConvert.SerializeObject(comparisonResult, Options.JsonSerializerOptions));
+                logger.LogInformation($"Successfully created output JSON file {outJsonFilename}");
             }
 
             if (o.CheckEnumerableOption(o.OutputFormats, OutputFileFormatEnum.PDF))
             {
                 QuestPDF.Settings.License = LicenseType.Community;
-                var pdfGenerator = new PdfGenerator(comparisonResult);
-                pdfGenerator.GeneratePdf(Path.Combine(outFolder, $"{outFilename}.pdf"));
+
+                var pdfGeneratorLogger = host.Services.GetRequiredService<ILogger<PdfGenerator>>();
+                var pdfGenerator = new PdfGenerator(comparisonResult, pdfGeneratorLogger);
+
+                pdfGenerator.GeneratePdf(outPdfFilename);
+                logger.LogInformation($"Successfully created output PDF file {outPdfFilename}");
             }
 
             return 1;

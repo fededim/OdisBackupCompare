@@ -7,18 +7,21 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using Microsoft.Extensions.Logging;
 
 namespace OdisBackupCompare
 {
     public class PdfGenerator : IDocument
     {
         protected ComparisonResults Results { get; }
-
         protected Regex SubsystemDataKey { get; }
 
-        public PdfGenerator(ComparisonResults results)
+        protected ILogger<PdfGenerator> Logger { get; }
+
+        public PdfGenerator(ComparisonResults results, ILogger<PdfGenerator> logger)
         {
             Results = results;
+            Logger = logger;
             SubsystemDataKey = new Regex($"(?<subsystem>.+)_(?<type>{String.Join('|', MeaningfulText.RemapData.Values.ToList())})");
         }
 

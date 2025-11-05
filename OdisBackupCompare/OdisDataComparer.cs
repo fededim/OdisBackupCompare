@@ -4,17 +4,20 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using Fededim.OdisBackupCompare.Data;
+using Microsoft.Extensions.Logging;
 
 namespace OdisBackupCompare
 {
     public class OdisDataComparer
     {
         protected Options Settings { get; set; }
+        protected ILogger<OdisDataComparer> Logger { get; }
 
 
-        public OdisDataComparer(Options settings)
+        public OdisDataComparer(Options settings, ILogger<OdisDataComparer> logger)
         {
             Settings = settings ?? throw new ArgumentNullException("settings");
+            Logger = logger;
         }
 
 
@@ -124,7 +127,7 @@ namespace OdisBackupCompare
 
 
 
-        public void CompareValueItem(EcuDataComparisonResult result, List<String> mainpath, DictionaryList<ValueItem, String> first, DictionaryList<ValueItem, String> second)
+        public void CompareValueItem(EcuDataComparisonResult result, List<String> mainpath, DictionaryList<ValueItem> first, DictionaryList<ValueItem> second)
         {
             // Compare values
             if (Settings.CheckEnumerableOption(Settings.ComparisonOptions, ComparisonOptionsEnum.DataMissingInFirstFile))
