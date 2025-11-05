@@ -80,12 +80,42 @@ The full unfiltered PDF is composed of these sections:
 - ECUs missing in first file
 - ECUs missing in second file
 - For every ECUs
-    - Informations/Codings/Adaptations not found in first file
-    - Informations/Codings/Adaptations differences between common entries
-    - Informations/Codings/Adaptations not found in second file
-
+    - Identification/Codings/Adaptations not found in first file
+    - Identification/Codings/Adaptations differences between common entries
+    - Identification/Codings/Adaptations not found in second file
 
 # Notice of Non-Affiliation and Disclaimer
 I'm not affiliated, associated, authorized, endorsed by, or in any way connected with the VOLKSWAGEN AG, or any of its subsidiaries or its affiliates. The official VOLKSWAGEN AG software or tools can be found at https://www.vw.com/.
 
 The names VOLKWAGEN, VW and ODIS as well as related names, marks, emblems and images are registered trademarks of their respective owners.
+
+# Sample screenshots
+
+Numerical values are compared figure by figure and differences are highlighted in:
+- red in the first file (highlighting the possible error)
+- green in the second file (highlighting the possible good value)
+- blue in the second file for any figure not found in the first one (highlighting either a bigger value or a difference in values length due to the different firmware/hardware part numbers)
+
+## Missing ECUs
+
+<img width="2333" height="1652" alt="image" src="https://github.com/user-attachments/assets/0c96f752-5089-4882-a370-7c760bc0910e" />
+
+## Missing ECUS from subsystems
+
+<img width="2328" height="1628" alt="image" src="https://github.com/user-attachments/assets/5bf2ac92-9f71-44fb-b644-cb4c6e2f3aad" />
+
+## Identification differences
+
+<img width="2306" height="1613" alt="image" src="https://github.com/user-attachments/assets/782dfc2c-afdd-4732-b116-94cb9373b625" />
+
+## Coding differences
+
+<img width="2312" height="1631" alt="image" src="https://github.com/user-attachments/assets/4d955415-b66b-42f6-b766-48f40d545310" />
+
+## Adaptation differences
+
+<img width="2312" height="1616" alt="image" src="https://github.com/user-attachments/assets/5c7a1e25-8e42-4492-9f12-cacfe3b7f5cd" />
+
+## Missing field between two control units (comparison of 0001 Engine Electronics between a diesel and a petrol Golf)
+
+<img width="2312" height="1621" alt="image" src="https://github.com/user-attachments/assets/4dfe6833-b410-4653-b38b-b27e4eb285de" />
