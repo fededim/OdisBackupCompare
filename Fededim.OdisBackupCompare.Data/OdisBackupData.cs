@@ -50,9 +50,6 @@ namespace Fededim.OdisBackupCompare.Data
 
     public class Options
     {
-        [Option('j', "inputjson", Required = true, HelpText = "Specifies the processed JSON files to reload", SetName = "input_json")]
-        public String InputJson { get; set; }
-
         [Option('i', "inputs", Required = true, HelpText = "Specifies the two Odis XML files to process separated by space", Min = 2, Max = 2, SetName = "input_xml")]
         public IEnumerable<string> Inputs { get; set; }
 
@@ -70,6 +67,9 @@ namespace Fededim.OdisBackupCompare.Data
 
         [Option('b', "bypass", Required = false, HelpText = "Specifies one or more field types to be bypassed by the comparison separated by space", Default = new FieldPropertyEnum[] { FieldPropertyEnum.DisplayName, FieldPropertyEnum.TiValue })]
         public IEnumerable<FieldPropertyEnum> BypassFields { get; set; }
+
+        [Option('j', "inputjson", Required = true, HelpText = "Specifies the processed JSON file to reload", SetName = "input_json")]
+        public String InputJson { get; set; }
 
         //[Option('u', "invariantculture", Required = false, HelpText = "Specifies the use of invariant culture when comparing numeric fields to reduce the number of differences due to number culture-specific separators")]
         //public bool UseInvariantCulture { get; set; }
