@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
 
 	  <PublishSingleFile>true</PublishSingleFile>
-	  <Version>0.1.0</Version>
+	  <Version>0.9.0</Version>
 	  <Authors>Federico Di Marco &lt;fededim@gmail.com&gt;</Authors>
 	  <Description>OdisBackupCompare is A tool for extracting the differences between two Volkswagen Odis XML backup files</Description>
 	  <Copyright>$([System.DateTime]::UtcNow.Year)</Copyright>

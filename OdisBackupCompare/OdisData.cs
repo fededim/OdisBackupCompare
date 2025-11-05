@@ -396,13 +396,13 @@ namespace OdisBackupCompare
         public String DisplayUnit { get; set; }
 
         [XmlElement("values")]
-        public DictionaryList<ValueItem, String> SubValues { get; set; } = new DictionaryList<ValueItem, String>((el, uniqueIndex) => $"{el.TiName ?? el.DisplayName}_{uniqueIndex}");
+        public DictionaryList<ValueItem, String> SubValues { get; set; } = new DictionaryList<ValueItem, String>((el, uniqueIndex) => (uniqueIndex > 1) ? $"{el.TiName ?? el.DisplayName}_{uniqueIndex}": $"{el.TiName ?? el.DisplayName}");
 
         public String GetName()
         {
             if (!String.IsNullOrWhiteSpace(DisplayName))
             {
-                if (!String.IsNullOrWhiteSpace(TiName))
+                if (!String.IsNullOrWhiteSpace(TiName) && TiName != DisplayName)
                     return $"{DisplayName} ({TiName})";
                 else
                     return DisplayName;
@@ -425,9 +425,9 @@ namespace OdisBackupCompare
                 sb.Append(TiValue);
 
             if (!String.IsNullOrWhiteSpace(DisplayUnit))
-                sb.Append($"({DisplayUnit})");
+                sb.Append($" ({DisplayUnit})");
             else if (!String.IsNullOrWhiteSpace(TiUnit))
-                sb.Append($"({TiUnit})");
+                sb.Append($" ({TiUnit})");
 
             return sb.ToString();
         }

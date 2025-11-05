@@ -33,8 +33,27 @@ namespace OdisBackupCompare
         [Option('c', "comparisonoptions", Required = false, HelpText = "Specify what to compare")]
         public IEnumerable<ComparisonOptionsEnum> ComparisonOptions { get; set; }
 
-        [Option('b', "bypass", Required = false, HelpText = "Specifies one or more field types to be bypassed by the comparison separated by space", Default = new FieldPropertyEnum[] { FieldPropertyEnum.DisplayName })]
+        [Option('b', "bypass", Required = false, HelpText = "Specifies one or more field types to be bypassed by the comparison separated by space", Default = new FieldPropertyEnum[] { FieldPropertyEnum.DisplayName, FieldPropertyEnum.TiValue })]
         public IEnumerable<FieldPropertyEnum> BypassFields { get; set; }
+
+        public static JsonSerializerOptions JsonSerializerOptions { get; set; }
+
+
+        public bool CheckEnumerableOption<T>(IEnumerable<T> options, T value)
+        {
+            return (options == null || !options.Any() || options.Contains(value));
+        }
+
+        static Options()
+        {
+            JsonSerializerOptions = new JsonSerializerOptions
+            {
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+                WriteIndented = true,
+                Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic)
+            };
+            JsonSerializerOptions.Converters.Add(new JsonStringEnumMemberConverter());
+        }
     }
 
     public class Program
@@ -65,19 +84,12 @@ namespace OdisBackupCompare
             var outFolder = o.OutputFolder ?? ".";
             var outFilename = $"OdisBackupCompare_{comparisonResult.Timestamp.ToString("yyyy-MM-ddTHH_mm_ss_ffff")}";
 
-            if (!o.OutputFormats.Any() || o.OutputFormats.Contains(OutputFileFormatEnum.JSON)) {
-                var jsonSerializerOptions = new JsonSerializerOptions
-                {
-                    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
-                    WriteIndented = true,
-                    Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic)
-                };
-                jsonSerializerOptions.Converters.Add(new JsonStringEnumMemberConverter());
-
-                File.WriteAllText(Path.Combine(outFolder, $"{outFilename}.json"), JsonSerializer.Serialize(comparisonResult, jsonSerializerOptions));
+            if (o.CheckEnumerableOption(o.OutputFormats, OutputFileFormatEnum.JSON))
+            {
+                File.WriteAllText(Path.Combine(outFolder, $"{outFilename}.json"), JsonSerializer.Serialize(comparisonResult, Options.JsonSerializerOptions));
             }
 
-            if (!o.OutputFormats.Any() || o.OutputFormats.Contains(OutputFileFormatEnum.PDF))
+            if (o.CheckEnumerableOption(o.OutputFormats, OutputFileFormatEnum.PDF))
             {
                 QuestPDF.Settings.License = LicenseType.Community;
                 var pdfGenerator = new PdfGenerator(comparisonResult);

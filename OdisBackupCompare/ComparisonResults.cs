@@ -83,7 +83,9 @@ namespace OdisBackupCompare
 
         public List<DifferenceMessage> Differences { get; set; }
 
-        public EcuData First { get; set; }   
+        [JsonIgnore]
+        public EcuData First { get; set; }
+        [JsonIgnore]
         public EcuData Second { get; set; }
 
 
@@ -114,6 +116,20 @@ namespace OdisBackupCompare
         public DifferenceMessage()
         {
             Path = new List<String>();
+        }
+
+
+        public String GetPathDisplayString(char separator = '→')
+        {
+            // PATH:
+            // if FieldDescription is populated remove the last element
+            // if path[1] == subsystem skip first 3 elements else the first 2 elements (their data is already shown on the table header)
+            var numberOfInitialElementsToSkip = (Path[1] == "subsystem") ? 3 : 2;
+            var displayPath = Path.Skip(numberOfInitialElementsToSkip).Take(Path.Count - numberOfInitialElementsToSkip).ToArray();
+            if (FieldDescriptions.Any())
+                displayPath[displayPath.Length - 1] = FieldDescriptions.First();
+
+            return String.Join(separator, displayPath);
         }
     }
 }

@@ -1,8 +1,12 @@
-﻿using QuestPDF.Fluent;
+﻿using QuestPDF;
+using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 
 namespace OdisBackupCompare
 {
@@ -25,17 +29,27 @@ namespace OdisBackupCompare
         {
             var options = Results.Options;
 
-            if (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInFirstFile))
-                AddMissingEcusNewPage(container, $"ECUs MISSING IN FIRST FILE ({Results.EcusMissingInFirst.Count})", Results.EcusMissingInFirst);
+            container.Page(page =>
+                {
+                    NewPage(page);
 
-            if (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInSecondFile))
-                AddMissingEcusNewPage(container, $"ECUs MISSING IN SECOND FILE ({Results.EcusMissingInSecond.Count})", Results.EcusMissingInSecond);
+                    page.Content().Column(column =>
+                    {
+                        if (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInFirstFile))
+                            AddMissingEcusNewPage(column, $"ECUs MISSING IN FIRST FILE ({Results.EcusMissingInFirst.Count})", Results.EcusMissingInFirst);
 
+                        if (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInSecondFile))
+                            AddMissingEcusNewPage(column, $"ECUs MISSING IN SECOND FILE ({Results.EcusMissingInSecond.Count})", Results.EcusMissingInSecond);
 
-            foreach (var ecuComparison in Results.EcusComparisonResult)
-            {
-                AddEcuComparisonPage(container, new List<String> { $"ECU: {ecuComparison.FirstEcu.EcuId} ({ecuComparison.FirstEcu.EcuName})", $"ECU: {ecuComparison.SecondEcu.EcuId} ({ecuComparison.SecondEcu.EcuName})" }, ecuComparison);
-            }
+                        foreach (var ecuComparison in Results.EcusComparisonResult)
+                        {
+                            if (options.CheckEnumerableOption(options.EcuIds, ecuComparison.FirstEcu.EcuId))
+                            {
+                                AddEcuComparisonPage(column, new List<String> { $"ECU: {ecuComparison.FirstEcu.EcuId} ({ecuComparison.FirstEcu.EcuName})", $"ECU: {ecuComparison.SecondEcu.EcuId} ({ecuComparison.SecondEcu.EcuName})" }, ecuComparison);
+                            }
+                        }
+                    });
+                });
         }
 
 
@@ -47,71 +61,172 @@ namespace OdisBackupCompare
             return container.Border(1)
                 .BorderColor(Colors.Grey.Lighten1)
                 .Background(backgroundColor)
-                .PaddingVertical(5)
-                .PaddingHorizontal(10)
-                .AlignCenter()
+                .PaddingVertical(2)
+                .PaddingHorizontal(2)
                 .AlignMiddle();
         }
 
 
 
-        private void AddEcuComparisonPage(IDocumentContainer container, List<String> headerTexts, EcuComparisonResult ecuComparison)
+        protected IContainer DifferenceHeaderCellStyle(IContainer container) => DifferenceCellStyle(container, Colors.Grey.Lighten3);
+        protected IContainer DifferenceCellStyle(IContainer container) => DifferenceCellStyle(container, Colors.White);
+        protected IContainer DifferenceCellStyle(IContainer container, Color backgroundColor)
+        {
+            return container.Border(1)
+                .BorderColor(Colors.Grey.Lighten1)
+                .Background(backgroundColor)
+                .PaddingVertical(2)
+                .PaddingHorizontal(2)
+                .AlignMiddle();
+        }
+
+
+        private void AddEcuComparisonPage(ColumnDescriptor column, List<String> headerTexts, EcuComparisonResult ecuComparison)
         {
             var options = Results.Options;
 
-            container
-                .Page(page =>
-                {
-                    NewPage(page);
-                    page.DefaultTextStyle(x => x.FontSize(16));
+            if (ecuComparison.MasterEcuDataMissingInFirst != null && ecuComparison.MasterEcuDataMissingInFirst.Any() && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInFirstFile)))
+                AddMissingEcuData(column, new List<String>(headerTexts) { $"MASTER ECU MISSING IN FIRST FILE ({ecuComparison.MasterEcuDataMissingInFirst.Count})" }, ecuComparison.MasterEcuDataMissingInFirst);
+            if (ecuComparison.MasterEcuDataMissingInSecond != null && ecuComparison.MasterEcuDataMissingInSecond.Any() && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInSecondFile)))
+                AddMissingEcuData(column, new List<String>(headerTexts) { $"MASTER ECU MISSING IN SECOND FILE ({ecuComparison.MasterEcuDataMissingInSecond.Count})" }, ecuComparison.MasterEcuDataMissingInSecond);
 
-                    page.Content().Column(column =>
-                    {
-                        if (ecuComparison.MasterEcuDataMissingInFirst != null && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInFirstFile)))
-                            AddMissingEcuData(column, new List<String>(headerTexts) { $"MASTER ECU DATA MISSING IN FIRST FILE ({ecuComparison.MasterEcuDataMissingInFirst.Count})" }, ecuComparison.MasterEcuDataMissingInFirst);
-                        if (ecuComparison.MasterEcuDataMissingInSecond != null && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInSecondFile)))
-                            AddMissingEcuData(column, new List<String>(headerTexts) { $"MASTER ECU DATA MISSING IN SECOND FILE ({ecuComparison.MasterEcuDataMissingInSecond.Count})" }, ecuComparison.MasterEcuDataMissingInSecond);
+            AddEcuDataComparison(column, new List<String>(headerTexts) { $"MASTER ECU DATA DIFFERENCES ({ecuComparison.MasterEcuDataComparisonResult.Count} TYPES)" }, ecuComparison.MasterEcuDataComparisonResult);
 
-                        if (ecuComparison.SubsystemEcuDataMissingInFirst != null && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInFirstFile)))
-                            AddMissingEcuData(column, new List<String>(headerTexts) { $"SUBSYSTEMS ECU DATA MISSING IN FIRST FILE ({ecuComparison.SubsystemEcuDataMissingInFirst.Count})" }, ecuComparison.SubsystemEcuDataMissingInFirst);
-                        if (ecuComparison.SubsystemEcuDataMissingInSecond != null && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInSecondFile)))
-                            AddMissingEcuData(column, new List<String>(headerTexts) { $"SUBSYSTEMS ECU DATA MISSING IN SECOND FILE ({ecuComparison.SubsystemEcuDataMissingInSecond.Count})" }, ecuComparison.SubsystemEcuDataMissingInSecond);
-                    });
-                });
+            if (ecuComparison.SubsystemEcuDataMissingInFirst != null && ecuComparison.SubsystemEcuDataMissingInFirst.Any() && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInFirstFile)))
+                AddMissingEcuData(column, new List<String>(headerTexts) { $"SUBSYSTEMS ECU MISSING IN FIRST FILE ({ecuComparison.SubsystemEcuDataMissingInFirst.Count})" }, ecuComparison.SubsystemEcuDataMissingInFirst);
+            if (ecuComparison.SubsystemEcuDataMissingInSecond != null && ecuComparison.SubsystemEcuDataMissingInSecond.Any() && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInSecondFile)))
+                AddMissingEcuData(column, new List<String>(headerTexts) { $"SUBSYSTEMS ECU MISSING IN SECOND FILE ({ecuComparison.SubsystemEcuDataMissingInSecond.Count})" }, ecuComparison.SubsystemEcuDataMissingInSecond);
+
+            AddEcuDataComparison(column, new List<String>(headerTexts) { $"SUBSYSTEMS ECU DATA DIFFERENCES ({ecuComparison.SubsystemEcuDataComparisonResult.Count})" }, ecuComparison.SubsystemEcuDataComparisonResult);
         }
 
 
         protected void AddEcuDataComparison(ColumnDescriptor column, List<String> mainHeaderTexts, List<EcuDataComparisonResult> comparisonResults)
         {
-            List<String> headerTexts = null;
+            List<String> headerTextsDifferences = null;
+            List<String> headerTextMissingFirst = null;
+            List<String> headerTextMissingSecond = null;
+            var options = Results.Options;
+
 
             int i = 1;
             foreach (var comparisonResult in comparisonResults)
             {
-                var match = SubsystemDataKey.Match(comparisonResults.Key);
-                if (match.Success)
+                column.Spacing(10);
+
+                if (comparisonResult.Path[1] == "subsystem")
                 {
-                    // subsystem case
-                    headerTexts = new List<string>(mainHeaderTexts) { $"SUBSYSTEM #{i++}: {match.Groups["subsystem"].Value}", $"TYPE: {match.Groups["type"].Value}" };
+                    var match = SubsystemDataKey.Match(comparisonResult.Path[2]);
+                    if (match.Success)
+                    {
+                        // subsystem case
+                        headerTextsDifferences = new List<string>(mainHeaderTexts) { $"SUBSYSTEM #{i}: {match.Groups["subsystem"].Value}", $"TYPE: {match.Groups["type"].Value} ({comparisonResult.Differences.Count} DIFFERENCES)" };
+                        headerTextMissingFirst = new List<string>(mainHeaderTexts) { $"SUBSYSTEM #{i}: {match.Groups["subsystem"].Value}", $"TYPE: {match.Groups["type"].Value} ({comparisonResult.FieldsMissingInFirst.Count} FIELDS MISSING IN FIRST FILE)" };
+                        headerTextMissingSecond = new List<string>(mainHeaderTexts) { $"SUBSYSTEM #{i++}: {match.Groups["subsystem"].Value}", $"TYPE: {match.Groups["type"].Value} ({comparisonResult.FieldsMissingInSecond.Count} FIELDS MISSING IN SECOND FILE)" };
+                    }
                 }
                 else
                 {
                     // master case
-                    headerTexts = new List<string>(mainHeaderTexts) { $"ECU #{i++}: {comparisonResults.Value.DisplayName ?? comparisonResults.Value.TiName}", $"TYPE: {comparisonResults.Key}" };
+                    headerTextsDifferences = new List<string>(mainHeaderTexts) { $"TYPE #{i}: {comparisonResult.Path[1]} ({comparisonResult.Differences.Count} DIFFERENCES)" };
+                    headerTextMissingFirst = new List<string>(mainHeaderTexts) { $"TYPE #{i}: {comparisonResult.Path[1]} ({comparisonResult.FieldsMissingInFirst.Count} FIELDS MISSING IN FIRST FILE)" };
+                    headerTextMissingSecond = new List<string>(mainHeaderTexts) { $"TYPE #{i++}: {comparisonResult.Path[1]} ({comparisonResult.FieldsMissingInSecond.Count} FIELDS MISSING IN SECOND FILE)" };
                 }
 
-                column.Spacing(10);
 
-                AddValueItemDataOnContainer(column.Item(), headerTexts, comparisonResults.Value.Values);
+                if (comparisonResult.FieldsMissingInFirst != null && comparisonResult.FieldsMissingInFirst.Any() && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInFirstFile)))
+                    AddValueItemDataOnContainer(column.Item(), headerTextMissingFirst, comparisonResult.FieldsMissingInFirst);
+
+                if (comparisonResult.FieldsMissingInSecond != null && comparisonResult.FieldsMissingInSecond.Any() && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInSecondFile)))
+                    AddValueItemDataOnContainer(column.Item(), headerTextMissingSecond, comparisonResult.FieldsMissingInSecond);
+
+                if (comparisonResult.Differences != null && comparisonResult.Differences.Any() && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.Differences)))
+                    AddDifferencesDataOnContainer(column.Item(), headerTextsDifferences, comparisonResult.Differences);
+
+                column.Item().PageBreak();
             }
 
-            column.Item().PageBreak();
+        }
+
+
+
+        protected void AddDifferencesDataOnContainer(IContainer container, List<String> headerTexts, List<DifferenceMessage> differences)
+        {
+            var options = Results.Options;
+
+            container.Table(table =>
+            {
+                table.ColumnsDefinition(columns =>
+                {
+                    columns.RelativeColumn();
+                    columns.RelativeColumn();
+                    columns.RelativeColumn();
+                    columns.RelativeColumn();
+                    columns.RelativeColumn();
+                    columns.RelativeColumn();
+                    columns.RelativeColumn();
+                    columns.RelativeColumn();
+                    columns.RelativeColumn();
+                    columns.RelativeColumn();
+                });
+
+                table.Header(header =>
+                {
+                    foreach (var s in headerTexts)
+                    {
+                        header.Cell().ColumnSpan(10).Element(DifferenceHeaderCellStyle).AlignCenter().Text(s).Bold();
+                    }
+                    header.Cell().ColumnSpan(10).Element(DifferenceHeaderCellStyle).AlignCenter().Text("Path").Bold();
+                    //header.Cell().ColumnSpan(3).Element(DifferenceHeaderCellStyle).Text("Description 2").Bold();
+                    //header.Cell().ColumnSpan(2).Element(DifferenceHeaderCellStyle).Text("Property").Bold();
+                    header.Cell().ColumnSpan(5).Element(DifferenceHeaderCellStyle).AlignCenter().Text("Value 1").Bold();
+                    header.Cell().ColumnSpan(5).Element(DifferenceHeaderCellStyle).AlignCenter().Text("Value 2").Bold();
+                });
+
+                int i = 1;
+                foreach (var difference in differences)
+                {
+                    if (!options.CheckEnumerableOption(options.BypassFields, difference.FieldProperty))
+                    {
+                        table.Cell().ColumnSpan(10).Element(DifferenceCellStyle).AlignLeft().Shrink().ShowEntire().Text($"{i++}: {difference.GetPathDisplayString()}").Bold();
+                        //table.Cell().ColumnSpan(3).Element(DifferenceCellStyle).Shrink().ShowEntire().Text(difference.FieldDescriptions.Count > 1 ? difference.FieldDescriptions[1] : String.Empty);
+                        //table.Cell().ColumnSpan(2).Element(DifferenceCellStyle).Shrink().ShowEntire().Text(JsonSerializer.Serialize(difference.FieldProperty, Options.JsonSerializerOptions));
+                        table.Cell().ColumnSpan(5).Element(DifferenceCellStyle).AlignCenter().Shrink().ShowEntire().Text(AddColoredText(difference.FirstValue, difference.SecondValue, Colors.Red.Medium));
+                        table.Cell().ColumnSpan(5).Element(DifferenceCellStyle).AlignCenter().Shrink().ShowEntire().Text(AddColoredText(difference.SecondValue, difference.FirstValue, Colors.Green.Medium));
+                    }
+                }
+            });
+        }
+
+
+        protected Action<TextDescriptor> AddColoredText(String value1, String value2, Color color)
+        {
+            return (text) =>
+            {
+                for (int i = 0; i < value1?.Length; i++)
+                {
+                    if (i >= (value2?.Length ?? 0))
+                    {
+                        text.Span(value1[i].ToString()).FontColor(Colors.Blue.Medium);
+                    }
+                    else
+                    {
+                        var valueChar = value1[i];
+                        if (valueChar == value2[i])
+                            text.Span(valueChar.ToString()).FontColor(Colors.Black);
+                        else
+                            text.Span(valueChar.ToString()).FontColor(color);
+                    }
+                }
+            };
         }
 
 
 
         protected void AddMissingEcuData(ColumnDescriptor column, List<String> mainHeaderTexts, Dictionary<String, EcuData> missingEcuData)
         {
+            column.Spacing(10);
+
             List<String> headerTexts = null;
 
             int i = 1;
@@ -129,103 +244,106 @@ namespace OdisBackupCompare
                     headerTexts = new List<string>(mainHeaderTexts) { $"ECU #{i++}: {ecuData.Value.DisplayName ?? ecuData.Value.TiName}", $"TYPE: {ecuData.Key}" };
                 }
 
-                column.Spacing(10);
 
-                AddValueItemDataOnContainer(column.Item(), headerTexts, ecuData.Value.Values);
+                AddValueItemDataOnContainer(column.Item(), headerTexts, ecuData.Value.Values.Dictionary);
+
+                column.Item().PageBreak();
             }
+        }
+
+
+
+        protected void AddValueItemDataOnContainer(IContainer container, List<String> headerTexts, Dictionary<String, ValueItem> valueItems)
+        {
+            if (valueItems.Count > 0)
+            {
+                container.Table(table =>
+                 {
+                     table.ColumnsDefinition(columns =>
+                     {
+                         columns.RelativeColumn();
+                         columns.RelativeColumn();
+                     });
+
+                     table.Header(header =>
+                     {
+                         foreach (var s in headerTexts)
+                         {
+                             header.Cell().ColumnSpan(2).Element(HeaderCellStyle).AlignCenter().Text(s).Bold();
+                         }
+                         header.Cell().Element(HeaderCellStyle).AlignCenter().Text("Name").Bold();
+                         header.Cell().Element(HeaderCellStyle).AlignCenter().Text("Value").Bold();
+                     });
+
+                     int i = 1;
+                     foreach (var valueItem in valueItems.Values)
+                     {
+                         if (valueItem.SubValues?.Count > 0)
+                         {
+                             table.Cell().Element(CellStyle).AlignCenter().Shrink().ShowEntire().Text($"{i++}: {valueItem.GetName()}").Bold();
+                             AddValueItemDataOnContainer(table.Cell().Element(CellStyle).AlignCenter(), new List<string>(), valueItem.SubValues.Dictionary);
+                         }
+                         else
+                         {
+                             table.Cell().Element(CellStyle).AlignCenter().Shrink().ShowEntire().Text($"{i++}: {valueItem.GetName()}").Bold();
+                             table.Cell().Element(CellStyle).AlignCenter().Shrink().ShowEntire().Text(valueItem.GetValue());
+                         }
+                     }
+                 });
+            }
+        }
+
+
+        private void AddMissingEcusNewPage(ColumnDescriptor column, String headerText, Dictionary<String, Ecu> missingEcus)
+        {
+            column.Spacing(10);
+
+            column.Item().Table(table =>
+                {
+                    table.ColumnsDefinition(columns =>
+                    {
+                        columns.RelativeColumn(0.1f);
+                        columns.RelativeColumn(0.4f);
+                        columns.RelativeColumn(0.25f);
+                        columns.RelativeColumn(0.25f);
+                    });
+
+                    table.Header(header =>
+                    {
+                        header.Cell().ColumnSpan(4).Element(HeaderCellStyle).AlignCenter().Text(headerText).Bold();
+                        header.Cell().Element(HeaderCellStyle).AlignCenter().Text("Id").Bold();
+                        header.Cell().Element(HeaderCellStyle).AlignCenter().Text("Name").Bold();
+                        header.Cell().Element(HeaderCellStyle).AlignCenter().Text("LogicalLink").Bold();
+                        header.Cell().Element(HeaderCellStyle).AlignCenter().Text("OdxVariant").Bold();
+                    });
+
+
+                    foreach (var ecu in missingEcus.Values)
+                    {
+                        table.Cell().Element(CellStyle).AlignCenter().Shrink().ShowEntire().Text(ecu.EcuId).Bold();
+                        table.Cell().Element(CellStyle).AlignCenter().Shrink().ShowEntire().Text(ecu.EcuName).Bold();
+                        table.Cell().Element(CellStyle).AlignCenter().Shrink().ShowEntire().Text(ecu.LogicalLink);
+                        table.Cell().Element(CellStyle).AlignCenter().Shrink().ShowEntire().Text(ecu.TesterOdxVariant);
+                    }
+
+                });
 
             column.Item().PageBreak();
         }
 
 
 
-        protected void AddValueItemDataOnContainer(IContainer container, List<String> headerTexts, DictionaryList<ValueItem, String> valueItems)
-        {
-            container.Table(table =>
-             {
-                 table.ColumnsDefinition(columns =>
-                 {
-                     columns.RelativeColumn();
-                     columns.RelativeColumn();
-                 });
-
-                 table.Header(header =>
-                 {
-                     foreach (var s in headerTexts)
-                     {
-                         header.Cell().ColumnSpan(2).Element(HeaderCellStyle).Text(s).Bold();
-                     }
-                     header.Cell().Element(HeaderCellStyle).Text("Name").Bold();
-                     header.Cell().Element(HeaderCellStyle).Text("Value").Bold();
-                 });
-
-
-                 foreach (var valueItem in valueItems)
-                 {
-                     if (valueItem.SubValues?.Count > 0)
-                     {
-                         table.Cell().Element(CellStyle).ShowEntire().Text(valueItem.GetName());
-                         AddValueItemDataOnContainer(table.Cell().Element(CellStyle).ShowEntire(), new List<string>(), valueItem.SubValues);
-                     }
-                     else
-                     {
-                         table.Cell().Element(CellStyle).ShowEntire().Text(valueItem.GetName());
-                         table.Cell().Element(CellStyle).ShowEntire().Text(valueItem.GetValue());
-                     }
-                 }
-             });
-        }
-
-
-        private void AddMissingEcusNewPage(IDocumentContainer container, String headerText, Dictionary<String, Ecu> missingEcus)
-        {
-            container
-                .Page(page =>
-                {
-                    NewPage(page);
-                    page.DefaultTextStyle(x => x.FontSize(16));
-                    page.Content().Table(table =>
-                    {
-                        table.ColumnsDefinition(columns =>
-                        {
-                            columns.RelativeColumn(0.1f);
-                            columns.RelativeColumn(0.4f);
-                            columns.RelativeColumn(0.25f);
-                            columns.RelativeColumn(0.25f);
-                        });
-
-                        table.Header(header =>
-                        {
-                            header.Cell().ColumnSpan(4).Element(HeaderCellStyle).Text(headerText).Bold();
-                            header.Cell().Element(HeaderCellStyle).Text("Id").Bold();
-                            header.Cell().Element(HeaderCellStyle).Text("Name").Bold();
-                            header.Cell().Element(HeaderCellStyle).Text("LogicalLink").Bold();
-                            header.Cell().Element(HeaderCellStyle).Text("OdxVariant").Bold();
-                        });
-
-
-                        foreach (var ecu in missingEcus.Values)
-                        {
-                            table.Cell().Element(CellStyle).ShowEntire().Text(ecu.EcuId);
-                            table.Cell().Element(CellStyle).ShowEntire().Text(ecu.EcuName);
-                            table.Cell().Element(CellStyle).ShowEntire().Text(ecu.LogicalLink);
-                            table.Cell().Element(CellStyle).ShowEntire().Text(ecu.TesterOdxVariant);
-                        }
-                    });
-                });
-        }
-
-        private void NewPage(PageDescriptor page)
+        protected void NewPage(PageDescriptor page)
         {
             var options = Results.Options;
 
             var inputFiles = options.Inputs.ToArray();
 
             page.Size(PageSizes.A4.Landscape());
-            page.MarginVertical(2.0f, Unit.Centimetre);
-            page.MarginHorizontal(2.5f, Unit.Centimetre);
+            page.MarginVertical(1.0f, Unit.Centimetre);
+            page.MarginHorizontal(1.5f, Unit.Centimetre);
             page.PageColor(Colors.White);
-            page.DefaultTextStyle(x => x.FontSize(20));
+            page.DefaultTextStyle(x => x.FontSize(14));
 
             //page.Header()
             //    .Column(column =>
@@ -244,21 +362,21 @@ namespace OdisBackupCompare
                 {
                     row.RelativeItem().AlignLeft().AlignMiddle()
                     .Text($"1: {Path.GetFileName(inputFiles[0])}")
-                    .FontSize(10);
+                    .FontSize(12);
 
                     row.RelativeItem().AlignRight().AlignMiddle()
                     .Text($"2: {Path.GetFileName(inputFiles[1])}")
-                    .FontSize(10);
+                    .FontSize(12);
                 });
 
             page.Footer()
                 .Row(row =>
                 {
                     row.RelativeItem(0.6f).AlignLeft().AlignMiddle()
-                    .Text(Results.Timestamp.ToString("G")).FontSize(12);
+                    .Text(Results.Timestamp.ToString("G")).FontSize(14);
 
                     row.RelativeItem(0.4f).AlignRight().AlignMiddle()
-                    .Text(td => td.CurrentPageNumber().FontSize(12));
+                    .Text(td => td.CurrentPageNumber().FontSize(14));
                 });
         }
     }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -72,17 +73,23 @@ namespace OdisBackupCompare
         {
             var result = new ComparisonResults(Settings);
 
-            result.EcusMissingInFirst = secondSet.Where(kvp => secondSet.Keys.Except(firstSet.Keys).Contains(kvp.Key)).ToDictionary();
-            result.EcusMissingInSecond = firstSet.Where(kvp => firstSet.Keys.Except(secondSet.Keys).Contains(kvp.Key)).ToDictionary();
+            if (Settings.CheckEnumerableOption(Settings.ComparisonOptions, ComparisonOptionsEnum.DataMissingInFirstFile))
+                result.EcusMissingInFirst = secondSet.Where(kvp => secondSet.Keys.Except(firstSet.Keys).Contains(kvp.Key)).ToDictionary();
+            if (Settings.CheckEnumerableOption(Settings.ComparisonOptions, ComparisonOptionsEnum.DataMissingInSecondFile))
+                result.EcusMissingInSecond = firstSet.Where(kvp => firstSet.Keys.Except(secondSet.Keys).Contains(kvp.Key)).ToDictionary();
 
             foreach (var ecuId in firstSet.Keys.Intersect(secondSet.Keys))
             {
-                var firstEcu = firstSet[ecuId];
-                var secondEcu = secondSet[ecuId];
+                if (Settings.CheckEnumerableOption(Settings.EcuIds, ecuId))
+                {
 
-                var ecuComparisonResult = CompareEcu(firstEcu, secondEcu);
-                if (!ecuComparisonResult.IsEmpty)
-                    result.EcusComparisonResult.Add(ecuComparisonResult);
+                    var firstEcu = firstSet[ecuId];
+                    var secondEcu = secondSet[ecuId];
+
+                    var ecuComparisonResult = CompareEcu(firstEcu, secondEcu);
+                    if (!ecuComparisonResult.IsEmpty)
+                        result.EcusComparisonResult.Add(ecuComparisonResult);
+                }
             }
 
             return result;
@@ -101,8 +108,10 @@ namespace OdisBackupCompare
             ecuComparisonResult.SecondEcu = second;
 
             // COMPARE MASTER DATA
-            ecuComparisonResult.MasterEcuDataMissingInFirst = second.EcuMasters.FilterByPredicate(kvp => second.EcuMasters.Dictionary.Keys.Except(first.EcuMasters.Dictionary.Keys ?? EmptyStringList).Contains(kvp.Key), MeaningfulText.Map);
-            ecuComparisonResult.MasterEcuDataMissingInSecond = first.EcuMasters.FilterByPredicate(kvp => first.EcuMasters.Dictionary.Keys.Except(second.EcuMasters.Dictionary.Keys ?? EmptyStringList).Contains(kvp.Key), MeaningfulText.Map);
+            if (Settings.CheckEnumerableOption(Settings.ComparisonOptions, ComparisonOptionsEnum.DataMissingInFirstFile))
+                ecuComparisonResult.MasterEcuDataMissingInFirst = second.EcuMasters.FilterByPredicate(kvp => second.EcuMasters.Dictionary.Keys.Except(first.EcuMasters.Dictionary.Keys ?? EmptyStringList).Contains(kvp.Key), MeaningfulText.Map);
+            if (Settings.CheckEnumerableOption(Settings.ComparisonOptions, ComparisonOptionsEnum.DataMissingInSecondFile))
+                ecuComparisonResult.MasterEcuDataMissingInSecond = first.EcuMasters.FilterByPredicate(kvp => first.EcuMasters.Dictionary.Keys.Except(second.EcuMasters.Dictionary.Keys ?? EmptyStringList).Contains(kvp.Key), MeaningfulText.Map);
 
             // for the master ecu (it is just one) the keys here ident, adaption_read, coding_read
             foreach (var ecuMasterType in first.EcuMasters.Dictionary.Keys.Intersect(second.EcuMasters.Dictionary.Keys))
@@ -116,11 +125,13 @@ namespace OdisBackupCompare
             }
 
             // COMPARE SUBSYSTEM DATA
-            ecuComparisonResult.SubsystemEcuDataMissingInFirst = second.EcuSubsystems?.Subsystems?.FilterByPredicate(kvp => second.EcuSubsystems?.Subsystems?.Dictionary?.Keys?.Except(first.EcuSubsystems?.Subsystems?.Dictionary?.Keys ?? EmptyStringList)?.Contains(kvp.Key) ?? false, MeaningfulText.Map);
-            ecuComparisonResult.SubsystemEcuDataMissingInSecond = first.EcuSubsystems?.Subsystems?.FilterByPredicate(kvp => first.EcuSubsystems?.Subsystems?.Dictionary?.Keys?.Except(second.EcuSubsystems?.Subsystems?.Dictionary?.Keys ?? EmptyStringList)?.Contains(kvp.Key) ?? false, MeaningfulText.Map);
+            if (Settings.CheckEnumerableOption(Settings.ComparisonOptions, ComparisonOptionsEnum.DataMissingInFirstFile))
+                ecuComparisonResult.SubsystemEcuDataMissingInFirst = second.EcuSubsystems?.Subsystems?.FilterByPredicate(kvp => second.EcuSubsystems?.Subsystems?.Dictionary?.Keys?.Except(first.EcuSubsystems?.Subsystems?.Dictionary?.Keys ?? EmptyStringList)?.Contains(kvp.Key) ?? false, MeaningfulText.Map);
+            if (Settings.CheckEnumerableOption(Settings.ComparisonOptions, ComparisonOptionsEnum.DataMissingInSecondFile))
+                ecuComparisonResult.SubsystemEcuDataMissingInSecond = first.EcuSubsystems?.Subsystems?.FilterByPredicate(kvp => first.EcuSubsystems?.Subsystems?.Dictionary?.Keys?.Except(second.EcuSubsystems?.Subsystems?.Dictionary?.Keys ?? EmptyStringList)?.Contains(kvp.Key) ?? false, MeaningfulText.Map);
 
             // for the subsystem ecus (they can be more than one) the keys here ident_<display_value of the value with ti_name MAS01171 (subsystem number)>, adaption_read_<ti_name> or coding_read_<ti_name>
-            var commonSubsystems = first.EcuSubsystems?.Subsystems?.Dictionary?.Keys.Intersect(second.EcuSubsystems?.Subsystems?.Dictionary?.Keys);
+            var commonSubsystems = (second.EcuSubsystems?.Subsystems?.Dictionary?.Keys != null) ? first.EcuSubsystems?.Subsystems?.Dictionary?.Keys.Intersect(second.EcuSubsystems?.Subsystems?.Dictionary?.Keys) : null;
             if (commonSubsystems != null)
             {
                 foreach (var ecuSubsystemType in commonSubsystems)
@@ -152,7 +163,8 @@ namespace OdisBackupCompare
             if (first.TiName != second.TiName)
                 throw new InvalidDataException($"TI_NAME: {first.TiName} is different from {second.TiName}!");
 
-            CompareStrings(result.Differences, path, new List<String>(mainpath) { first.DisplayName, second.DisplayName }, FieldPropertyEnum.DisplayName, first.DisplayName, second.DisplayName);
+            if (Settings.CheckEnumerableOption(Settings.ComparisonOptions, ComparisonOptionsEnum.Differences))
+                CompareStrings(result.Differences, path, new List<String>(mainpath) { first.DisplayName, second.DisplayName }, FieldPropertyEnum.DisplayName, first.DisplayName, second.DisplayName);
 
             CompareValueItem(result, mainpath, first?.Values, second?.Values);
 
@@ -164,8 +176,10 @@ namespace OdisBackupCompare
         public void CompareValueItem(EcuDataComparisonResult result, List<String> mainpath, DictionaryList<ValueItem, String> first, DictionaryList<ValueItem, String> second)
         {
             // Compare values
-            result.FieldsMissingInFirst.AddRange(second?.FilterByPredicate(kvp => second?.Dictionary?.Keys.Except(first?.Dictionary?.Keys ?? EmptyStringList).Contains(kvp.Key) ?? false));
-            result.FieldsMissingInSecond.AddRange(first?.FilterByPredicate(kvp => first?.Dictionary?.Keys.Except(second?.Dictionary?.Keys ?? EmptyStringList).Contains(kvp.Key) ?? false));
+            if (Settings.CheckEnumerableOption(Settings.ComparisonOptions, ComparisonOptionsEnum.DataMissingInFirstFile))
+                result.FieldsMissingInFirst.AddRange(second?.FilterByPredicate(kvp => second?.Dictionary?.Keys.Except(first?.Dictionary?.Keys ?? EmptyStringList).Contains(kvp.Key) ?? false));
+            if (Settings.CheckEnumerableOption(Settings.ComparisonOptions, ComparisonOptionsEnum.DataMissingInSecondFile))
+                result.FieldsMissingInSecond.AddRange(first?.FilterByPredicate(kvp => first?.Dictionary?.Keys.Except(second?.Dictionary?.Keys ?? EmptyStringList).Contains(kvp.Key) ?? false));
 
             // keys here are actual values
             foreach (var valueItemKey in first.Dictionary.Keys.Intersect(second.Dictionary.Keys))
@@ -174,16 +188,19 @@ namespace OdisBackupCompare
                 var secondValue = second.Dictionary[valueItemKey];
 
                 var path = new List<String>(mainpath) { valueItemKey };
-                var fieldDescriptions = new List<String>() { firstValue.DisplayName, secondValue.DisplayName }.Distinct().ToList();
+                var fieldDescriptions = new List<String>() { firstValue.DisplayName, secondValue.DisplayName };
 
-                CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.TiName, firstValue.TiName, secondValue.TiName);
-                CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.TiUnit, firstValue.TiUnit, secondValue.TiUnit);
-                CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.DisplayName, firstValue.DisplayName, secondValue.DisplayName);
-                CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.DisplayValue, firstValue.DisplayValue, secondValue.DisplayValue);
-                CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.DisplayUnit, firstValue.DisplayUnit, secondValue.DisplayUnit);
-                if (!CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.BinValue, firstValue.BinValue, secondValue.BinValue))
-                    if (!CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.HexValue, firstValue.HexValue, secondValue.HexValue))
-                        CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.TiValue, firstValue.TiValue, secondValue.TiValue);
+                if (Settings.CheckEnumerableOption(Settings.ComparisonOptions, ComparisonOptionsEnum.Differences))
+                {
+                    CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.TiName, firstValue.TiName, secondValue.TiName);
+                    CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.TiUnit, firstValue.TiUnit, secondValue.TiUnit);
+                    CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.DisplayName, firstValue.DisplayName, secondValue.DisplayName);
+                    CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.DisplayValue, firstValue.DisplayValue, secondValue.DisplayValue);
+                    CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.DisplayUnit, firstValue.DisplayUnit, secondValue.DisplayUnit);
+                    if (!CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.BinValue, firstValue.BinValue, secondValue.BinValue))
+                        if (!CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.HexValue, firstValue.HexValue, secondValue.HexValue))
+                            CompareStrings(result.Differences, path, fieldDescriptions, FieldPropertyEnum.TiValue, firstValue.TiValue, secondValue.TiValue);
+                }
 
                 // perform recursion of subvalues
                 if (firstValue.SubValues?.Count > 0 || secondValue.SubValues?.Count > 0)
@@ -199,7 +216,7 @@ namespace OdisBackupCompare
             if (String.IsNullOrWhiteSpace(first) && String.IsNullOrWhiteSpace(second))
                 return false;
 
-            if (!Settings.BypassFields.Contains(fieldProperty) && (
+            if (!Settings.CheckEnumerableOption(Settings.BypassFields,fieldProperty) && (
                 (String.IsNullOrWhiteSpace(first) && !String.IsNullOrWhiteSpace(second)) ||
                 (!String.IsNullOrWhiteSpace(first) && String.IsNullOrWhiteSpace(second)) ||
                 (first != second)))
