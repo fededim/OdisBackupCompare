@@ -50,10 +50,10 @@ namespace Fededim.OdisBackupCompare.Data
 
     public class Options
     {
-        [Option('j', "inputjson", Required = true, HelpText = "Specifies the two input files to process separated by space", SetName = "input_json")]
+        [Option('j', "inputjson", Required = true, HelpText = "Specifies the processed JSON files to reload", SetName = "input_json")]
         public String InputJson { get; set; }
 
-        [Option('i', "inputs", Required = true, HelpText = "Specifies the two input files to process separated by space", Min = 2, Max = 2, SetName = "input_xml")]
+        [Option('i', "inputs", Required = true, HelpText = "Specifies the two Odis XML files to process separated by space", Min = 2, Max = 2, SetName = "input_xml")]
         public IEnumerable<string> Inputs { get; set; }
 
         [Option('e', "ecus", Required = false, HelpText = "Specify the ecu ids which must be compared")]
@@ -65,7 +65,7 @@ namespace Fededim.OdisBackupCompare.Data
         [Option('f', "outputfolder", Required = false, HelpText = "Specify the output folder where all the output files will be generated")]
         public String Output { get; set; }
 
-        [Option('o', "comparisonoptions", Required = false, HelpText = "Specify what to compare")]
+        [Option('o', "comparisonoptions", Required = false, HelpText = "Specify what to compare", Default = new ComparisonOptionsEnum[] { ComparisonOptionsEnum.Differences, ComparisonOptionsEnum.DataMissingInFirstFile, ComparisonOptionsEnum.DataMissingInSecondFile })]
         public IEnumerable<ComparisonOptionsEnum> ComparisonOptions { get; set; }
 
         [Option('b', "bypass", Required = false, HelpText = "Specifies one or more field types to be bypassed by the comparison separated by space", Default = new FieldPropertyEnum[] { FieldPropertyEnum.DisplayName, FieldPropertyEnum.TiValue })]

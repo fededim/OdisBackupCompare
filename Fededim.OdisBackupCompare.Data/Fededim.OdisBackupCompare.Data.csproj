@@ -9,6 +9,7 @@
 		<Description>Fededim.OdisBackupCompare.Data is a package containing data classes for parsing Volkswagen Odis XML backup files and OdisBackupCompare JSON files.</Description>
 		<Copyright>$([System.DateTime]::UtcNow.Year) Federico Di Marco &lt;fededim@gmail.com&gt;</Copyright>
 
+		<IsPublishable>false</IsPublishable>
 		<PublishSingleFile>true</PublishSingleFile>
 		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
