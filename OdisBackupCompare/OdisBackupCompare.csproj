@@ -28,7 +28,8 @@
 			- Initial version
 
 			v1.0.1
-			- Bugfix on layout of missing field and fixed typo in help text			
+			- Bugfix on layout of missing fields
+			- Fixed typo in help text			
 		</PackageReleaseNotes>
 
 	</PropertyGroup>
