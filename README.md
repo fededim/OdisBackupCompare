@@ -1,7 +1,7 @@
 # OdisBackupCompare (&copy; 2025 Federico Di Marco &lt;fededim@gmail.com&gt; released under MIT license)
 **OdisBackupCompare** is a tool for extracting the differences between two Volkswagen Odis XML backup files and exporting them in various formats (JSON/PDF).
 
-After installing new control units or wiring in a retrofit, getting everything to work can be frustrating without proper configuration of control units. To make troubleshooting of any configuration issue arising during a retrofit easier, I developed this free tool to compare control unit configurations between two cars (maybe I should have done it earlier). I  tested it thoroughly on my Golf MK7 Facelift, it supports all electronic control units, even those connected to the secondary buses (subsystems); high likely it should work also with any control unit from a VW group car. If you find it useful, donations are appreciated via the above GitHub sponsor button.
+After installing new control units or wiring in a retrofit, getting everything to work can be frustrating or even impossible without proper configuration of control units. To make troubleshooting easier, I developed this free tool to compare control unit configurations between two cars (maybe I should have done it earlier). I  tested it thoroughly on my Golf MK7 Facelift, it supports all electronic control units, even those connected to the secondary buses (subsystems); high likely it should work also with any control unit from a VW group car. If you find it useful, donations are appreciated via the above GitHub sponsor button.
 
 # How to use it
 
