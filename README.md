@@ -6,7 +6,7 @@ After installing new control units or wiring in a retrofit, getting everything t
 # How to use it
 
 ## PREREQUISITE
-- **Perform a full backup through **Volkswagen Odis** of the two cars which must be compared and obtain two XML files to be compared** (ODIS creates also a HTML file for displaying all the data inside a webpage, but it is not needed). Steps:
+- **Perform a full backup through **Volkswagen Odis** of the two cars which must be compared and obtain two XML backup files** (ODIS creates also a HTML file for displaying all the data inside a webpage, but it is not needed). Steps:
     1. Vehicle functions -> 046 Vehicle Special Functions -> 046.01 Coding / Adaptations
     1. Check Read KWP control module
     1. Check Adaptations / Codes under "Data from all control modules"
