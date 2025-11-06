@@ -3,6 +3,11 @@
 
 After installing new control units or wiring in a retrofit, getting everything to work can be frustrating or even impossible without proper configuration of control units. To make troubleshooting easier, I developed this free tool to compare control unit configurations between two cars (maybe I should have done it earlier). I  tested it thoroughly on my Golf MK7 Facelift, it supports all electronic control units, even those connected to the secondary buses (subsystems); high likely it should work also with any control unit from a VW group car. If you find it useful, donations are appreciated via the above GitHub sponsor button.
 
+# Important Notice of Non-Affiliation and Disclaimer
+I'm not affiliated, associated, authorized, endorsed by, or in any way connected with the VOLKSWAGEN AG, or any of its subsidiaries or its affiliates. The official VOLKSWAGEN AG software or tools can be found at https://www.vw.com/.
+
+The names VOLKWAGEN, VW and ODIS as well as related names, marks, emblems and images are registered trademarks of their respective owners.
+
 # How to use it
 
 ## PREREQUISITE
@@ -83,11 +88,6 @@ The full unfiltered PDF is composed of these sections:
     - Identification/Codings/Adaptations not found in first file
     - Identification/Codings/Adaptations differences between common entries
     - Identification/Codings/Adaptations not found in second file
-
-# Notice of Non-Affiliation and Disclaimer
-I'm not affiliated, associated, authorized, endorsed by, or in any way connected with the VOLKSWAGEN AG, or any of its subsidiaries or its affiliates. The official VOLKSWAGEN AG software or tools can be found at https://www.vw.com/.
-
-The names VOLKWAGEN, VW and ODIS as well as related names, marks, emblems and images are registered trademarks of their respective owners.
 
 # Sample screenshots
 
