@@ -1,12 +1,17 @@
 # OdisBackupCompare (&copy; 2025 Federico Di Marco &lt;fededim@gmail.com&gt; released under MIT license)
 **OdisBackupCompare** is a tool for extracting the differences between two Volkswagen Odis XML backup files and exporting them in various formats (JSON/PDF).
 
-After installing new control units or wiring in a retrofit, getting everything to work can be frustrating without proper configuration of control units. To make troubleshooting of any configuration issue arising during a retrofit easier, I developed this free tool to compare control unit configurations between two cars (maybe I should have done it earlier). I  tested it thoroughly on my Golf MK7 Facelift, it supports all electronic control units, even those connected to the secondary buses (subsystems); high likely it should work also with any control unit from a VW group car. If you find it useful, donations are appreciated via the above GitHub sponsor button.
+After installing new control units or wiring in a retrofit, getting everything to work can be frustrating or even impossible without proper configuration of control units. To make troubleshooting easier, I developed this free tool to compare control unit configurations between two cars (maybe I should have done it earlier). I  tested it thoroughly on my Golf MK7 Facelift, it supports all electronic control units, even those connected to the secondary buses (subsystems); high likely it should work also with any control unit from a VW group car. If you find it useful, donations are appreciated via the above GitHub sponsor button.
+
+# Important Notice of Non-Affiliation and Disclaimer
+I'm not affiliated, associated, authorized, endorsed by, or in any way connected with the VOLKSWAGEN AG, or any of its subsidiaries or its affiliates. The official VOLKSWAGEN AG software or tools can be found at https://www.vw.com/.
+
+The names VOLKWAGEN, VW and ODIS as well as related names, marks, emblems and images are registered trademarks of their respective owners.
 
 # How to use it
 
 ## PREREQUISITE
-- **Perform a full backup through **Volkswagen Odis** of the two cars which must be compared and obtain two XML files to be compared** (ODIS creates also a HTML file for displaying all the data inside a webpage, but it is not needed). Steps:
+- **Perform a full backup through **Volkswagen Odis** of the two cars which must be compared and obtain two XML backup files** (ODIS creates also a HTML file for displaying all the data inside a webpage, but it is not needed). Steps:
     1. Vehicle functions -> 046 Vehicle Special Functions -> 046.01 Coding / Adaptations
     1. Check Read KWP control module
     1. Check Adaptations / Codes under "Data from all control modules"
@@ -83,11 +88,6 @@ The full unfiltered PDF is composed of these sections:
     - Identification/Codings/Adaptations not found in first file
     - Identification/Codings/Adaptations differences between common entries
     - Identification/Codings/Adaptations not found in second file
-
-# Notice of Non-Affiliation and Disclaimer
-I'm not affiliated, associated, authorized, endorsed by, or in any way connected with the VOLKSWAGEN AG, or any of its subsidiaries or its affiliates. The official VOLKSWAGEN AG software or tools can be found at https://www.vw.com/.
-
-The names VOLKWAGEN, VW and ODIS as well as related names, marks, emblems and images are registered trademarks of their respective owners.
 
 # Sample screenshots
 
