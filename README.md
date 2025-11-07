@@ -12,10 +12,13 @@ The names VOLKWAGEN, VW and ODIS as well as related names, marks, emblems and im
 
 ## PREREQUISITE
 - **Perform a full backup through **Volkswagen Odis** of the two cars which must be compared and obtain two XML backup files** (ODIS creates also a HTML file for displaying all the data inside a webpage, but it is not needed). Steps:
-    1. Vehicle functions -> 046 Vehicle Special Functions -> 046.01 Coding / Adaptations
-    1. Check Read KWP control module
-    1. Check Adaptations / Codes under "Data from all control modules"
-    1. Click button "Read Data"
+    1. **Vehicle functions -> 046 Vehicle Special Functions -> 046.01 Coding / Adaptations**
+    1. Check **Read KWP control module**
+    1. Check **Adaptations / Codes** under **Data from all control modules**
+    1. Click button **Read Data**
+       ![Odis_Backup](https://github.com/user-attachments/assets/f0165321-3ddb-4e01-895c-1b2604578077)
+
+
 - If you do not have already, [install .NET 8.0 framework runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0).
 
 **OdisBackupCompare** consists of a single executable and it is available for **Windows, Linux, Mac X64/ARM64** (it has been developed with Microsoft .NET). Download the latest archive [from releases](https://github.com/fededim/OdisBackupCompare/releases) and decompress it whenever you want. You must have installed .NET 8.0 to execute it from command prompt / shell.
