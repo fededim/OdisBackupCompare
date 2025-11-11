@@ -2,7 +2,7 @@
   "profiles": {
     "OdisBackupCompare": {
       "commandName": "Project",
-      "commandLineArgs": "-i SampleXML\\FullBackup_PXC_WVWZZZAUZHP345715_20250912T154832.xml SampleXML\\FullBackup_PXC_WVWZZZAUZEW070736_20250315T173802.xml"
+      "commandLineArgs": "-i SampleXML\\FullBackup_PXC_WVWZZZAUZHP345715_20250912T154832.xml SampleXML\\FullBackup_PXC_WVWZZZAUZEW070736_20250315T173802.xml -f test.pdf"
       //"commandLineArgs": "-j c:\\temp\\OdisBackupCompare_2025-11-05T16_00_27_3334.json -e 8 -f c:\\temp\\pippo.pdf"
     }
   }

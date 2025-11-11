@@ -53,16 +53,19 @@ namespace Fededim.OdisBackupCompare.Data
         [Option('i', "inputs", Required = true, HelpText = "Specifies the two Odis XML files to process separated by space", Min = 2, Max = 2, SetName = "input_xml")]
         public IEnumerable<string> Inputs { get; set; }
 
-        [Option('e', "ecus", Required = false, HelpText = "Specify the ecu ids which must be compared")]
+        [Option('e', "ecus", Required = false, HelpText = "Specifies the ecu ids which must be compared")]
         public IEnumerable<String> EcuIds { get; set; }
 
-        [Option('m', "outputformat", Required = false, HelpText = "Specify the file formats to generate as output containing the result of the comparison", Default = new OutputFileFormatEnum[] { OutputFileFormatEnum.JSON, OutputFileFormatEnum.PDF })]
+        [Option('m', "outputformat", Required = false, HelpText = "Specifies the file formats to generate as output containing the result of the comparison", Default = new OutputFileFormatEnum[] { OutputFileFormatEnum.JSON, OutputFileFormatEnum.PDF })]
         public IEnumerable<OutputFileFormatEnum> OutputFormats { get; set; }
-
-        [Option('f', "outputfolder", Required = false, HelpText = "Specify the output folder where all the output files will be generated")]
+        
+        [Option('f', "outputfolder", Required = false, HelpText = "Specifies the output folder or filename where all the output data will be stored")]
         public String Output { get; set; }
 
-        [Option('o', "comparisonoptions", Required = false, HelpText = "Specify what to compare", Default = new ComparisonOptionsEnum[] { ComparisonOptionsEnum.Differences, ComparisonOptionsEnum.DataMissingInFirstFile, ComparisonOptionsEnum.DataMissingInSecondFile })]
+        [Option('s', "splitbyecu", Required = false, HelpText = "Specifies to split the output file in multiple files, one for each ecu. Ignored for JSON output.")]
+        public Boolean SplitByEcu { get; set; }
+
+        [Option('o', "comparisonoptions", Required = false, HelpText = "Specifies what to compare", Default = new ComparisonOptionsEnum[] { ComparisonOptionsEnum.Differences, ComparisonOptionsEnum.DataMissingInFirstFile, ComparisonOptionsEnum.DataMissingInSecondFile })]
         public IEnumerable<ComparisonOptionsEnum> ComparisonOptions { get; set; }
 
         [Option('b', "bypass", Required = false, HelpText = "Specifies one or more field types to be bypassed by the comparison separated by space", Default = new FieldPropertyEnum[] { FieldPropertyEnum.DisplayName, FieldPropertyEnum.TiValue })]
@@ -118,10 +121,25 @@ namespace Fededim.OdisBackupCompare.Data
             EcusMissingInSecond = new Dictionary<String, Ecu>();
         }
 
-        public ComparisonResults(Options options)
+        public ComparisonResults(Options options):this()
         {
             Timestamp = DateTime.Now;
             Options = options;
+        }
+
+
+        public List<ComparisonResults> SplitByEcu()
+        {
+            var results = new List<ComparisonResults>();
+
+            foreach (var ecu in EcusComparisonResult)
+            {
+                var result = new ComparisonResults(Options);
+                result.EcusComparisonResult.Add(ecu);
+                results.Add(result);
+            }
+
+            return results;
         }
     }
 
