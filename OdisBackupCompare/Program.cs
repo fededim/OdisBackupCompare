@@ -10,6 +10,7 @@ using QuestPDF;
 using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -97,7 +98,8 @@ namespace OdisBackupCompare
             }
             else
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(outFolder));
+                if (!String.IsNullOrEmpty(Path.GetDirectoryName(outFolder)))
+                    Directory.CreateDirectory(Path.GetDirectoryName(outFolder));
                 outJsonFilename = Path.ChangeExtension(outFolder,".json");
                 outPdfFilename = Path.ChangeExtension(outFolder, ".pdf");
             }
@@ -114,10 +116,27 @@ namespace OdisBackupCompare
                 QuestPDF.Settings.License = LicenseType.Community;
 
                 var pdfGeneratorLogger = host.Services.GetRequiredService<ILogger<PdfGenerator>>();
-                var pdfGenerator = new PdfGenerator(comparisonResult, pdfGeneratorLogger);
 
-                pdfGenerator.GeneratePdf(outPdfFilename);
-                logger.LogInformation($"Successfully created output PDF file {outPdfFilename}");
+                if (o.SplitByEcu)
+                {
+                    foreach (var splitComparisonResult in comparisonResult.SplitByEcu())
+                    {
+                        var ecuId = splitComparisonResult.EcusComparisonResult.First().EcuId;
+                        var outSplitPdfFilename = $"{Path.GetFileNameWithoutExtension(outPdfFilename)}_{ecuId}{Path.GetExtension(outPdfFilename)}";
+
+                        var pdfGenerator = new PdfGenerator(splitComparisonResult, pdfGeneratorLogger);
+                        pdfGenerator.GeneratePdf(outSplitPdfFilename);
+
+                        logger.LogInformation($"Successfully created output PDF file {outSplitPdfFilename} for ECU {ecuId}");
+                    }
+                }
+                else
+                {
+                    var pdfGenerator = new PdfGenerator(comparisonResult, pdfGeneratorLogger);
+                    pdfGenerator.GeneratePdf(outPdfFilename);
+
+                    logger.LogInformation($"Successfully created output PDF file {outPdfFilename}");
+                }
             }
 
             return 1;

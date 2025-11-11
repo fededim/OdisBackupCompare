@@ -33,14 +33,16 @@ OdisBackupCompare 1.0.0+efe77bd492f87ac32158c6e1312809fdbd8e1b31
 
   -i, --inputs               Required. Specifies the two Odis XML files to
                              process separated by space<br/>
-  -e, --ecus                 Specify the ecu ids which must be compared<br/>
-  -m, --outputformat         (Default: JSON PDF) Specify the file formats to
+  -e, --ecus                 Specifies the ecu ids which must be compared<br/>
+  -m, --outputformat         (Default: JSON PDF) Specifies the file formats to
                              genenerate as output containing the result of the
                              comparison<br/>
-  -f, --outputfolder         Specify the output folder where all the output
-                             files will be generated<br/>
+  -f, --outputfolder         Specifies the output folder or filename where all the output
+                             data will be stored<br/>
+  -s, --splitbyecu           Specifies to split the output file in multiple files, one for
+                             each ecu. Ignored for JSON output.<br/>
   -o, --comparisonoptions    (Default: Differences DataMissingInFirstFile
-                             DataMissingInSecondFile) Specify what to compare<br/>
+                             DataMissingInSecondFile) Specifies what to compare<br/>
   -b, --bypass               (Default: DisplayName TiValue) Specifies one or
                              more field types to be bypassed by the comparison
                              separated by space
@@ -59,8 +61,14 @@ OdisBackupCompare -i &lt;path to XML file1&gt; &lt;path to XML file2&gt;
 **Compare two Odis XML files and generate all output files (JSON/PDF) in folder c:\temp.**<br/><br/>
 OdisBackupCompare -i &lt;path to XML file1&gt; &lt;path to XML file2&gt; -f c:\temp
 
+**Compare two Odis XML files and generate all output files (JSON/PDF) in files c:\temp\test.\* **<br/><br/>
+OdisBackupCompare -i &lt;path to XML file1&gt; &lt;path to XML file2&gt; -f c:\temp
+
 **Compare two Odis XML files and generate only PDF file**<br/><br/>
 OdisBackupCompare -i &lt;path to XML file1&gt; &lt;path to XML file2&gt; -m PDF
+
+**Compare two Odis XML files and generate only PDF files, one file for each ECUs**<br/><br/>
+OdisBackupCompare -i &lt;path to XML file1&gt; &lt;path to XML file2&gt; -m PDF -s
 
 **Compare two Odis XML files and generate all output files (JSON/PDF) only for ECUs with IDs 19 (0019 -> Gateway), 4B (004B --> Multi function module).**<br/><br/>
 OdisBackupCompare -i &lt;path to XML file1&gt; &lt;path to XML file2&gt; -e 19 4b
@@ -122,3 +130,17 @@ Numerical values are compared figure by figure and differences are highlighted i
 ## Missing field between two control units (comparison of 0001 Engine Electronics between a diesel and a petrol Golf)
 
 <img width="2312" height="1621" alt="image" src="https://github.com/user-attachments/assets/4dfe6833-b410-4653-b38b-b27e4eb285de" />
+
+# Version history
+
+v1.0.0
+- Initial version
+
+v1.0.1
+- Bugfix on layout of missing fields
+- Fixed typo in help text
+
+v1.0.2
+- Bugfix: skipped the generation of ECUs MISSING IN FIRST/SECOND FILE section when they are empty
+- Improvement: added option -s or --splitbyecu to generate a single PDF file for every ECUs
+- Bugfix: fixed crash when specifying an output file in the current directory

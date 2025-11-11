@@ -38,10 +38,10 @@ namespace OdisBackupCompare
 
                     page.Content().Column(column =>
                     {
-                        if (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInFirstFile))
+                        if (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInFirstFile) && Results.EcusMissingInFirst.Any())
                             AddMissingEcusNewPage(column, $"ECUs MISSING IN FIRST FILE ({Results.EcusMissingInFirst.Count})", Results.EcusMissingInFirst);
 
-                        if (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInSecondFile))
+                        if (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInSecondFile) && Results.EcusMissingInSecond.Any())
                             AddMissingEcusNewPage(column, $"ECUs MISSING IN SECOND FILE ({Results.EcusMissingInSecond.Count})", Results.EcusMissingInSecond);
 
                         foreach (var ecuComparison in Results.EcusComparisonResult)
