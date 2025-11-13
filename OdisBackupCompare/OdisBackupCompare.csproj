@@ -58,7 +58,7 @@
 
 	<ItemGroup>
 		<None Update="appsettings.json">
-		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 		<None Update="SampleXML\FullBackup_PXC_WVWZZZAUZEW070736_20250315T173802.xml">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
