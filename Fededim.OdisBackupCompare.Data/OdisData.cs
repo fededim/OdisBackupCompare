@@ -140,9 +140,9 @@ namespace Fededim.OdisBackupCompare.Data
     public static class MeaningfulText
     {
         public static Dictionary<string, string> RemapData = new Dictionary<string, string> {
-            { "ident","Identification" },
-            { "coding_read","Coding" },
-            { "adaption_read","Adaptation" },
+            { "ident","IDENTIFICATION" },
+            { "coding_read","CODING" },
+            { "adaption_read","ADAPTATION" },
         };
 
 

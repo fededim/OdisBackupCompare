@@ -141,3 +141,9 @@ v1.0.2
 - Bugfix: skipped the generation of ECUs MISSING IN FIRST/SECOND FILE section when they are empty
 - Improvement: added option -s or --splitbyecu to generate a single PDF file for every ECUs
 - Bugfix: fixed crash when specifying an output file in the current directory
+
+v1.0.3
+- Bugfix/improvement: improved and fixed page breaks
+- Improvement: added output of missing ecus file in single file per ecu mode
+- Improvement: added colors to key elements inside the table headers
+- Bugfix: fixed color of numerical values differences

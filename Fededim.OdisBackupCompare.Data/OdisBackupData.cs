@@ -58,7 +58,7 @@ namespace Fededim.OdisBackupCompare.Data
 
         [Option('m', "outputformat", Required = false, HelpText = "Specifies the file formats to generate as output containing the result of the comparison", Default = new OutputFileFormatEnum[] { OutputFileFormatEnum.JSON, OutputFileFormatEnum.PDF })]
         public IEnumerable<OutputFileFormatEnum> OutputFormats { get; set; }
-        
+
         [Option('f', "outputfolder", Required = false, HelpText = "Specifies the output folder or filename where all the output data will be stored")]
         public String Output { get; set; }
 
@@ -121,20 +121,25 @@ namespace Fededim.OdisBackupCompare.Data
             EcusMissingInSecond = new Dictionary<String, Ecu>();
         }
 
-        public ComparisonResults(Options options):this()
+
+        public ComparisonResults(Options options, DateTime? timestamp = null) : this()
         {
-            Timestamp = DateTime.Now;
+            if (timestamp.HasValue)
+                Timestamp = timestamp.Value;
+            else
+                Timestamp = DateTime.Now;
+
             Options = options;
         }
 
 
         public List<ComparisonResults> SplitByEcu()
         {
-            var results = new List<ComparisonResults>();
+            var results = new List<ComparisonResults>() { new ComparisonResults(Options, Timestamp) { EcusMissingInFirst = EcusMissingInFirst, EcusMissingInSecond = EcusMissingInSecond } };
 
             foreach (var ecu in EcusComparisonResult)
             {
-                var result = new ComparisonResults(Options);
+                var result = new ComparisonResults(Options, Timestamp);
                 result.EcusComparisonResult.Add(ecu);
                 results.Add(result);
             }
