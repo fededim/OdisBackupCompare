@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
@@ -13,6 +14,49 @@ using System.Threading.Tasks;
 
 namespace Fededim.OdisBackupCompare.Data
 {
+    public class AppSettings
+    {
+        public ColorOptions ColorOptions { get; protected set; }
+
+        public AppSettings()
+        {
+            ColorOptions = new ColorOptions();
+        }
+    }
+
+
+    public class ColorOptions : Dictionary<String, String>
+    {
+        public static Dictionary<String, String> DefaultColors = new Dictionary<String, String>
+        {
+            { "DefaultTextColor", "#FF000000" },
+            { "HeaderDifferenceNumberColor", "#FFE91E63" },
+            { "HeaderECUColor", "#FF673AB7" },
+            { "HeaderTypeColor", "#FFF57C00" },
+            { "DifferenceLeftCharacterColor", "#FFD32F2F" },
+            { "DifferenceRightCharacterColor", "#FF388E3C" },
+            { "DifferenceAdditionalColor", "#FF1976D2" },
+            { "PageColor", "#FFFFFFFF" },
+            { "TableHeaderColor", "#FFEEEEEE" },
+            { "TableCellColor", "#FFFFFFFF" },
+            { "TableBorderColor", "#FFBDBDBD" },
+            { "TableDifferenceHeaderColor", "#FFEEEEEE" },
+            { "TableDifferenceCellColor", "#FFFFFFFF" },
+            { "TableDifferenceBorderColor", "#FFBDBDBD" },
+        };
+
+        public String GetColor(string key)
+        {
+            TryGetValue(key, out var value);
+
+            if (!String.IsNullOrWhiteSpace(value))
+                return value;
+
+            return DefaultColors[key];
+        }
+    }
+
+
     public enum OutputFileFormatEnum { JSON, PDF };
 
     public enum ComparisonOptionsEnum { Differences, DataMissingInFirstFile, DataMissingInSecondFile };
@@ -79,6 +123,7 @@ namespace Fededim.OdisBackupCompare.Data
 
         public static JsonSerializerSettings JsonSerializerOptions { get; set; }
 
+        public AppSettings AppSettings { get; set; }
 
         public bool CheckEnumerableOption<T>(IEnumerable<T> options, T value)
         {

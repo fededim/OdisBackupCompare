@@ -39,16 +39,16 @@ namespace OdisBackupCompare
                     page.Content().Column(column =>
                     {
                         if (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInFirstFile) && Results.EcusMissingInFirst.Any())
-                            AddMissingEcusNewPage(column, TextDescriptorFromFormattableString($"ECUs MISSING IN FIRST FILE ({Results.EcusMissingInFirst.Count:#FFE91E63})"), Results.EcusMissingInFirst);
+                            AddMissingEcusNewPage(column, TextDescriptorFromFormattableString($"ECUs MISSING IN FIRST FILE ({Results.EcusMissingInFirst.Count:@HeaderDifferenceNumberColor})"), Results.EcusMissingInFirst);
 
                         if (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInSecondFile) && Results.EcusMissingInSecond.Any())
-                            AddMissingEcusNewPage(column, TextDescriptorFromFormattableString($"ECUs MISSING IN SECOND FILE ({Results.EcusMissingInSecond.Count:#FFE91E63})"), Results.EcusMissingInSecond);
+                            AddMissingEcusNewPage(column, TextDescriptorFromFormattableString($"ECUs MISSING IN SECOND FILE ({Results.EcusMissingInSecond.Count:@HeaderDifferenceNumberColor})"), Results.EcusMissingInSecond);
 
                         foreach (var ecuComparison in Results.EcusComparisonResult)
                         {
                             if (options.CheckEcuIds(ecuComparison.FirstEcu.EcuId))
                             {
-                                AddEcuComparisonPage(column, new List<Action<TextDescriptor>> { TextDescriptorFromFormattableString($"ECU: {ecuComparison.FirstEcu.EcuId:#FF673AB7} ({ecuComparison.FirstEcu.EcuName:#FF673AB7})"), TextDescriptorFromFormattableString($"ECU: {ecuComparison.SecondEcu.EcuId:#FF673AB7} ({ecuComparison.SecondEcu.EcuName:#FF673AB7})") }, ecuComparison);
+                                AddEcuComparisonPage(column, new List<Action<TextDescriptor>> { TextDescriptorFromFormattableString($"ECU: {ecuComparison.FirstEcu.EcuId:@HeaderECUColor} ({ecuComparison.FirstEcu.EcuName:@HeaderECUColor})"), TextDescriptorFromFormattableString($"ECU: {ecuComparison.SecondEcu.EcuId:@HeaderECUColor} ({ecuComparison.SecondEcu.EcuName:@HeaderECUColor})") }, ecuComparison);
                             }
                         }
                     });
@@ -56,13 +56,13 @@ namespace OdisBackupCompare
         }
 
 
-        protected IContainer HeaderCellStyle(IContainer container) => DefaultCellStyle(container, Colors.Grey.Lighten3);
-        protected IContainer CellStyle(IContainer container) => DefaultCellStyle(container, Colors.White);
+        protected IContainer HeaderCellStyle(IContainer container) => DefaultCellStyle(container, Results.Options.AppSettings.ColorOptions.GetColor("TableHeaderColor"));
+        protected IContainer CellStyle(IContainer container) => DefaultCellStyle(container, Results.Options.AppSettings.ColorOptions.GetColor("TableCellColor"));
 
         protected IContainer DefaultCellStyle(IContainer container, Color backgroundColor)
         {
             return container.Border(1)
-                .BorderColor(Colors.Grey.Lighten1)
+                .BorderColor(Results.Options.AppSettings.ColorOptions.GetColor("TableBorderColor"))
                 .Background(backgroundColor)
                 .PaddingVertical(2)
                 .PaddingHorizontal(2)
@@ -71,12 +71,12 @@ namespace OdisBackupCompare
 
 
 
-        protected IContainer DifferenceHeaderCellStyle(IContainer container) => DifferenceCellStyle(container, Colors.Grey.Lighten3);
-        protected IContainer DifferenceCellStyle(IContainer container) => DifferenceCellStyle(container, Colors.White);
+        protected IContainer DifferenceHeaderCellStyle(IContainer container) => DifferenceCellStyle(container, Results.Options.AppSettings.ColorOptions.GetColor("TableDifferenceHeaderColor"));
+        protected IContainer DifferenceCellStyle(IContainer container) => DifferenceCellStyle(container, Results.Options.AppSettings.ColorOptions.GetColor("TableDifferenceCellColor"));
         protected IContainer DifferenceCellStyle(IContainer container, Color backgroundColor)
         {
             return container.Border(1)
-                .BorderColor(Colors.Grey.Lighten1)
+                .BorderColor(Results.Options.AppSettings.ColorOptions.GetColor("TableDifferenceBorderColor"))
                 .Background(backgroundColor)
                 .PaddingVertical(2)
                 .PaddingHorizontal(2)
@@ -91,18 +91,18 @@ namespace OdisBackupCompare
             var options = Results.Options;
 
             if (ecuComparison.MasterEcuDataMissingInFirst != null && ecuComparison.MasterEcuDataMissingInFirst.Any() && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInFirstFile)))
-                AddMissingEcuData(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"MASTER ECU MISSING IN FIRST FILE ({ecuComparison.MasterEcuDataMissingInFirst.Count:#FFE91E63})") }, ecuComparison.MasterEcuDataMissingInFirst);
+                AddMissingEcuData(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"MASTER ECU MISSING IN FIRST FILE ({ecuComparison.MasterEcuDataMissingInFirst.Count:@HeaderDifferenceNumberColor})") }, ecuComparison.MasterEcuDataMissingInFirst);
             if (ecuComparison.MasterEcuDataMissingInSecond != null && ecuComparison.MasterEcuDataMissingInSecond.Any() && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInSecondFile)))
-                AddMissingEcuData(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"MASTER ECU MISSING IN SECOND FILE ({ecuComparison.MasterEcuDataMissingInSecond.Count:#FFE91E63})") }, ecuComparison.MasterEcuDataMissingInSecond);
+                AddMissingEcuData(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"MASTER ECU MISSING IN SECOND FILE ({ecuComparison.MasterEcuDataMissingInSecond.Count:@HeaderDifferenceNumberColor})") }, ecuComparison.MasterEcuDataMissingInSecond);
 
-            AddEcuDataComparison(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"MASTER ECU DATA DIFFERENCES ({ecuComparison.MasterEcuDataComparisonResult.Count:#FFE91E63} TYPES)") }, ecuComparison.MasterEcuDataComparisonResult);
+            AddEcuDataComparison(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"MASTER ECU DATA DIFFERENCES ({ecuComparison.MasterEcuDataComparisonResult.Count:@HeaderDifferenceNumberColor} TYPES)") }, ecuComparison.MasterEcuDataComparisonResult);
 
             if (ecuComparison.SubsystemEcuDataMissingInFirst != null && ecuComparison.SubsystemEcuDataMissingInFirst.Any() && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInFirstFile)))
-                AddMissingEcuData(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"SUBSYSTEMS ECU MISSING IN FIRST FILE ({ecuComparison.SubsystemEcuDataMissingInFirst.Count:#FFE91E63})") }, ecuComparison.SubsystemEcuDataMissingInFirst);
+                AddMissingEcuData(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"SUBSYSTEMS ECU MISSING IN FIRST FILE ({ecuComparison.SubsystemEcuDataMissingInFirst.Count:@HeaderDifferenceNumberColor})") }, ecuComparison.SubsystemEcuDataMissingInFirst);
             if (ecuComparison.SubsystemEcuDataMissingInSecond != null && ecuComparison.SubsystemEcuDataMissingInSecond.Any() && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInSecondFile)))
-                AddMissingEcuData(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"SUBSYSTEMS ECU MISSING IN SECOND FILE ({ecuComparison.SubsystemEcuDataMissingInSecond.Count:#FFE91E63})") }, ecuComparison.SubsystemEcuDataMissingInSecond);
+                AddMissingEcuData(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"SUBSYSTEMS ECU MISSING IN SECOND FILE ({ecuComparison.SubsystemEcuDataMissingInSecond.Count:@HeaderDifferenceNumberColor})") }, ecuComparison.SubsystemEcuDataMissingInSecond);
 
-            AddEcuDataComparison(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"SUBSYSTEMS ECU DATA DIFFERENCES ({ecuComparison.SubsystemEcuDataComparisonResult.Count:#FFE91E63})") }, ecuComparison.SubsystemEcuDataComparisonResult);
+            AddEcuDataComparison(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"SUBSYSTEMS ECU DATA DIFFERENCES ({ecuComparison.SubsystemEcuDataComparisonResult.Count:@HeaderDifferenceNumberColor})") }, ecuComparison.SubsystemEcuDataComparisonResult);
         }
 
 
@@ -131,13 +131,15 @@ namespace OdisBackupCompare
                         {
                             if (format.StartsWith("#"))
                                 color = Color.FromHex(format);
+                            else if (format.StartsWith("@"))
+                                color = Color.FromHex(Results.Options.AppSettings.ColorOptions.GetColor(format.Substring(1)));
                             else
                             {
                                 argValue = String.Format("{0}",format, args[Convert.ToInt32(m.Groups["index"].Value)]);
                             }
                         }
 
-                        text.Span(argValue).Bold().FontColor(color ?? Colors.Black);
+                        text.Span(argValue).Bold().FontColor(color ?? Results.Options.AppSettings.ColorOptions.GetColor("DefaultTextColor"));
                     }
                 }
             };
@@ -165,17 +167,17 @@ namespace OdisBackupCompare
                     if (match.Success)
                     {
                         // subsystem case
-                        headerTextsDifferences = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"SUBSYSTEM #{i}: {match.Groups["subsystem"].Value:#FF673AB7}"), TextDescriptorFromFormattableString($"TYPE: {match.Groups["type"].Value:#FFF57C00} ({comparisonResult.Differences.Count:#FFE91E63} DIFFERENCES)") };
-                        headerTextMissingFirst = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"SUBSYSTEM #{i}: {match.Groups["subsystem"].Value:#FF673AB7}"), TextDescriptorFromFormattableString($"TYPE: {match.Groups["type"].Value:#FFF57C00} ({comparisonResult.FieldsMissingInFirst.Count:#FFE91E63} FIELDS MISSING IN FIRST FILE)") };
-                        headerTextMissingSecond = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"SUBSYSTEM #{i++}: {match.Groups["subsystem"].Value:#FF673AB7}"), TextDescriptorFromFormattableString($"TYPE: {match.Groups["type"].Value:#FFF57C00} ({comparisonResult.FieldsMissingInSecond.Count:#FFE91E63} FIELDS MISSING IN SECOND FILE)") };
+                        headerTextsDifferences = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"SUBSYSTEM #{i}: {match.Groups["subsystem"].Value:@HeaderECUColor}"), TextDescriptorFromFormattableString($"TYPE: {match.Groups["type"].Value:@HeaderTypeColor} ({comparisonResult.Differences.Count:@HeaderDifferenceNumberColor} DIFFERENCES)") };
+                        headerTextMissingFirst = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"SUBSYSTEM #{i}: {match.Groups["subsystem"].Value:@HeaderECUColor}"), TextDescriptorFromFormattableString($"TYPE: {match.Groups["type"].Value:@HeaderTypeColor} ({comparisonResult.FieldsMissingInFirst.Count:@HeaderDifferenceNumberColor} FIELDS MISSING IN FIRST FILE)") };
+                        headerTextMissingSecond = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"SUBSYSTEM #{i++}: {match.Groups["subsystem"].Value:@HeaderECUColor}"), TextDescriptorFromFormattableString($"TYPE: {match.Groups["type"].Value:@HeaderTypeColor} ({comparisonResult.FieldsMissingInSecond.Count:@HeaderDifferenceNumberColor} FIELDS MISSING IN SECOND FILE)") };
                     }
                 }
                 else
                 {
                     // master case
-                    headerTextsDifferences = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"TYPE #{i}: {comparisonResult.Path[1]:#FFF57C00} ({comparisonResult.Differences.Count:#FFE91E63} DIFFERENCES)") };
-                    headerTextMissingFirst = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"TYPE #{i}: {comparisonResult.Path[1]:#FFF57C00} ({comparisonResult.FieldsMissingInFirst.Count:#FFE91E63} FIELDS MISSING IN FIRST FILE)") };
-                    headerTextMissingSecond = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"TYPE #{i++}: {comparisonResult.Path[1]:#FFF57C00} ({comparisonResult.FieldsMissingInSecond.Count:#FFE91E63} FIELDS MISSING IN SECOND FILE)") };
+                    headerTextsDifferences = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"TYPE #{i}: {comparisonResult.Path[1]:@HeaderTypeColor} ({comparisonResult.Differences.Count:@HeaderDifferenceNumberColor} DIFFERENCES)") };
+                    headerTextMissingFirst = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"TYPE #{i}: {comparisonResult.Path[1]:@HeaderTypeColor} ({comparisonResult.FieldsMissingInFirst.Count:@HeaderDifferenceNumberColor} FIELDS MISSING IN FIRST FILE)") };
+                    headerTextMissingSecond = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"TYPE #{i++}: {comparisonResult.Path[1]:@HeaderTypeColor} ({comparisonResult.FieldsMissingInSecond.Count:@HeaderDifferenceNumberColor} FIELDS MISSING IN SECOND FILE)") };
                 }
 
 
@@ -234,8 +236,8 @@ namespace OdisBackupCompare
                         table.Cell().ColumnSpan(10).Element(DifferenceCellStyle).AlignLeft().Shrink().ShowEntire().Text($"{i++}: {difference.GetPathDisplayString()}").Bold();
                         //table.Cell().ColumnSpan(3).Element(DifferenceCellStyle).Shrink().ShowEntire().Text(difference.FieldDescriptions.Count > 1 ? difference.FieldDescriptions[1] : String.Empty);
                         //table.Cell().ColumnSpan(2).Element(DifferenceCellStyle).Shrink().ShowEntire().Text(JsonSerializer.Serialize(difference.FieldProperty, Options.JsonSerializerOptions));
-                        table.Cell().ColumnSpan(5).Element(DifferenceCellStyle).AlignCenter().Shrink().ShowEntire().Text(AddColoredText(difference.FirstValue, difference.SecondValue, difference.FieldParameters, Colors.Red.Darken2));
-                        table.Cell().ColumnSpan(5).Element(DifferenceCellStyle).AlignCenter().Shrink().ShowEntire().Text(AddColoredText(difference.SecondValue, difference.FirstValue, difference.FieldParameters, Colors.Green.Darken2));
+                        table.Cell().ColumnSpan(5).Element(DifferenceCellStyle).AlignCenter().Shrink().ShowEntire().Text(AddColoredText(difference.FirstValue, difference.SecondValue, difference.FieldParameters, Results.Options.AppSettings.ColorOptions.GetColor("DifferenceLeftCharacterColor")));
+                        table.Cell().ColumnSpan(5).Element(DifferenceCellStyle).AlignCenter().Shrink().ShowEntire().Text(AddColoredText(difference.SecondValue, difference.FirstValue, difference.FieldParameters, Results.Options.AppSettings.ColorOptions.GetColor("DifferenceRightCharacterColor")));
                     }
                 }
             });
@@ -247,20 +249,20 @@ namespace OdisBackupCompare
             return (text) =>
             {
                 if (!fieldParameters.HasFlag(FieldParametersEnum.IsFreeText) || fieldParameters.HasFlag(FieldParametersEnum.IsNumerical))
-                    text.Span(value1).FontColor(value1 != value2 ? color : Colors.Black);
+                    text.Span(value1).FontColor(value1 != value2 ? color : Results.Options.AppSettings.ColorOptions.GetColor("DefaultTextColor"));
                 else
                 {
                     for (int i = 0; i < value1?.Length; i++)
                     {
                         if (i >= (value2?.Length ?? 0))
                         {
-                            text.Span(value1[i].ToString()).FontColor(Colors.Blue.Darken2);
+                            text.Span(value1[i].ToString()).FontColor(Results.Options.AppSettings.ColorOptions.GetColor("DifferenceAdditionalColor"));
                         }
                         else
                         {
                             var valueChar = value1[i];
                             if (valueChar == value2[i])
-                                text.Span(valueChar.ToString()).FontColor(Colors.Black);
+                                text.Span(valueChar.ToString()).FontColor(Results.Options.AppSettings.ColorOptions.GetColor("DefaultTextColor"));
                             else
                                 text.Span(valueChar.ToString()).FontColor(color);
                         }
@@ -284,12 +286,12 @@ namespace OdisBackupCompare
                 if (match.Success)
                 {
                     // subsystem case
-                    headerTexts = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"SUBSYSTEM #{i++}: {match.Groups["subsystem"].Value:#FF673AB7}"), TextDescriptorFromFormattableString($"TYPE: {match.Groups["type"].Value:#FFF57C00}") };
+                    headerTexts = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"SUBSYSTEM #{i++}: {match.Groups["subsystem"].Value:@HeaderECUColor}"), TextDescriptorFromFormattableString($"TYPE: {match.Groups["type"].Value:@HeaderTypeColor}") };
                 }
                 else
                 {
                     // master case
-                    headerTexts = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"ECU #{i++}: {ecuData.Value.DisplayName ?? ecuData.Value.TiName:#FF673AB7}"), TextDescriptorFromFormattableString($"TYPE: {ecuData.Key:#FFF57C00}") };
+                    headerTexts = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"ECU #{i++}: {ecuData.Value.DisplayName ?? ecuData.Value.TiName:@HeaderECUColor}"), TextDescriptorFromFormattableString($"TYPE: {ecuData.Key:@HeaderTypeColor}") };
                 }
 
 
@@ -386,8 +388,8 @@ namespace OdisBackupCompare
             page.Size(PageSizes.A4.Landscape());
             page.MarginVertical(1.0f, Unit.Centimetre);
             page.MarginHorizontal(1.5f, Unit.Centimetre);
-            page.PageColor(Colors.White);
-            page.DefaultTextStyle(x => x.FontSize(14));
+            page.PageColor(Results.Options.AppSettings.ColorOptions.GetColor("PageColor"));
+            page.DefaultTextStyle(x => x.FontSize(14).FontColor(Results.Options.AppSettings.ColorOptions.GetColor("DefaultTextColor")));
 
             //page.Header()
             //    .Column(column =>

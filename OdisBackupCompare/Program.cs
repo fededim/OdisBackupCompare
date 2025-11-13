@@ -6,11 +6,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using NReco.Logging.File;
-using QuestPDF;
 using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -19,7 +17,7 @@ namespace OdisBackupCompare
     public class Program
     {
         public static void Main(string[] args)
-        {           
+        {
             var parser = new CommandLine.Parser(with => with.HelpWriter = null);
             var parserResult = parser.ParseArguments<Options>(args);
 
@@ -46,16 +44,25 @@ namespace OdisBackupCompare
             var host = Host.CreateDefaultBuilder().ConfigureServices((context, services) =>
             {
                 services.AddTransient<OdisDataComparer>(sp => new OdisDataComparer(o, sp.GetRequiredService<ILogger<OdisDataComparer>>()));
+                services.Configure<AppSettings>(context.Configuration.GetSection("Settings"));
+                services.AddLogging();
             })
-            .ConfigureLogging((context,loggerBuilder) =>
+            .ConfigureLogging((context, loggerBuilder) =>
             {
-                loggerBuilder
-                .AddDebug()
-                .AddConsole()
-                .AddFile("app.log", append: true);
+                var loggingSection = context.Configuration.GetSection("Logging");
+
+                if ((loggingSection?.GetChildren()?.Any()??false))
+                {
+                    loggerBuilder.AddFile(loggingSection);
+                }
+                else
+                {
+                    loggerBuilder.AddFile("app.log", append: true);
+                }
             }).Build();
 
             var logger = host.Services.GetRequiredService<ILogger<Program>>();
+            o.AppSettings = host.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<AppSettings>>()?.Value;
 
             ComparisonResults comparisonResult = null;
             if (!String.IsNullOrEmpty(o.InputJson))
@@ -65,7 +72,7 @@ namespace OdisBackupCompare
                 comparisonResult.Options.OutputFormats = o.OutputFormats;
                 comparisonResult.Options.Output = o.Output;
                 comparisonResult.Options.ComparisonOptions = o.ComparisonOptions;
-                comparisonResult.Options.EcuIds = comparisonResult.Options.EcuIds?.Count()>0 ? comparisonResult.Options.EcuIds.Intersect(o.EcuIds) : o.EcuIds;
+                comparisonResult.Options.EcuIds = comparisonResult.Options.EcuIds?.Count() > 0 ? comparisonResult.Options.EcuIds.Intersect(o.EcuIds) : o.EcuIds;
                 comparisonResult.Options.BypassFields = comparisonResult.Options.BypassFields.Union(o.BypassFields);
 
                 logger.LogInformation($"Successfully read file {o.InputJson}");
@@ -92,7 +99,8 @@ namespace OdisBackupCompare
 
             String outJsonFilename = null;
             String outPdfFilename = null;
-            if (Directory.Exists(outFolder)) {
+            if (Directory.Exists(outFolder))
+            {
                 outJsonFilename = Path.Combine(outFolder, $"{outFilename}.json");
                 outPdfFilename = Path.Combine(outFolder, $"{outFilename}.pdf");
             }
@@ -100,7 +108,7 @@ namespace OdisBackupCompare
             {
                 if (!String.IsNullOrEmpty(Path.GetDirectoryName(outFolder)))
                     Directory.CreateDirectory(Path.GetDirectoryName(outFolder));
-                outJsonFilename = Path.ChangeExtension(outFolder,".json");
+                outJsonFilename = Path.ChangeExtension(outFolder, ".json");
                 outPdfFilename = Path.ChangeExtension(outFolder, ".pdf");
             }
 
