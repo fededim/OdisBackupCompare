@@ -147,3 +147,7 @@ v1.0.3
 - Improvement: added output of missing ecus file in single file per ecu mode
 - Improvement: added colors to key elements inside the table headers
 - Bugfix: fixed color of numerical values differences
+
+v1.0.4
+- Improvement: added optional standard configuration file named appsetting.json
+- Improvement: added customization of colors inside an optional appsetting.json file for theming PDF output files
