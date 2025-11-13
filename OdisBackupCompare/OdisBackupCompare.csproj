@@ -5,7 +5,7 @@
 		<TargetFramework>net8.0</TargetFramework>
 		<ImplicitUsings>disable</ImplicitUsings>
 
-		<Version>1.0.2</Version>
+		<Version>1.0.3</Version>
 		<Authors>Federico Di Marco &lt;fededim@gmail.com&gt;</Authors>
 		<Description>OdisBackupCompare is a tool for extracting the differences between two Volkswagen Odis XML backup files and exporting them in various formats (JSON/PDF).</Description>
 		<Copyright>$([System.DateTime]::UtcNow.Year) Federico Di Marco &lt;fededim@gmail.com&gt;</Copyright>
@@ -35,6 +35,12 @@
 			- Bugfix: skipped the generation of ECUs MISSING IN FIRST/SECOND FILE section when they are empty
 			- Improvement: added option -s or --splitbyecu to generate a single PDF file for every ECUs
 			- Bugfix: fixed crash when specifying an output file in the current directory
+
+			v1.0.3
+			- Bugfix/improvement: improved and fixed page breaks
+			- Improvement: added output of missing ecus file in single file per ecu mode
+			- Improvement: added colors to key elements inside the table headers
+			- Bugfix: fixed color of numerical values differences
 		</PackageReleaseNotes>
 
 	</PropertyGroup>

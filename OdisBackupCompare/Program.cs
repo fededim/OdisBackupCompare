@@ -121,13 +121,14 @@ namespace OdisBackupCompare
                 {
                     foreach (var splitComparisonResult in comparisonResult.SplitByEcu())
                     {
-                        var ecuId = splitComparisonResult.EcusComparisonResult.First().EcuId;
-                        var outSplitPdfFilename = $"{Path.GetFileNameWithoutExtension(outPdfFilename)}_{ecuId}{Path.GetExtension(outPdfFilename)}";
+                        var ecuId = splitComparisonResult.EcusComparisonResult.FirstOrDefault()?.EcuId?.TrimStart('0')?.PadLeft(2, '0');
+                        var outSplitPdfFilename = String.IsNullOrWhiteSpace(ecuId) ? $"{Path.GetFileNameWithoutExtension(outPdfFilename)}_missing{Path.GetExtension(outPdfFilename)}" : $"{Path.GetFileNameWithoutExtension(outPdfFilename)}_{ecuId}{Path.GetExtension(outPdfFilename)}";
 
                         var pdfGenerator = new PdfGenerator(splitComparisonResult, pdfGeneratorLogger);
                         pdfGenerator.GeneratePdf(outSplitPdfFilename);
 
-                        logger.LogInformation($"Successfully created output PDF file {outSplitPdfFilename} for ECU {ecuId}");
+                        var fileForText = String.IsNullOrWhiteSpace(ecuId) ? "for missing ECUs" : $"for ECU {ecuId}";
+                        logger.LogInformation($"Successfully created output PDF file {outSplitPdfFilename} {fileForText}");
                     }
                 }
                 else

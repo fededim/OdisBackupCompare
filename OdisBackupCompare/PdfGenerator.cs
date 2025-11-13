@@ -39,16 +39,16 @@ namespace OdisBackupCompare
                     page.Content().Column(column =>
                     {
                         if (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInFirstFile) && Results.EcusMissingInFirst.Any())
-                            AddMissingEcusNewPage(column, $"ECUs MISSING IN FIRST FILE ({Results.EcusMissingInFirst.Count})", Results.EcusMissingInFirst);
+                            AddMissingEcusNewPage(column, TextDescriptorFromFormattableString($"ECUs MISSING IN FIRST FILE ({Results.EcusMissingInFirst.Count:#FFE91E63})"), Results.EcusMissingInFirst);
 
                         if (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInSecondFile) && Results.EcusMissingInSecond.Any())
-                            AddMissingEcusNewPage(column, $"ECUs MISSING IN SECOND FILE ({Results.EcusMissingInSecond.Count})", Results.EcusMissingInSecond);
+                            AddMissingEcusNewPage(column, TextDescriptorFromFormattableString($"ECUs MISSING IN SECOND FILE ({Results.EcusMissingInSecond.Count:#FFE91E63})"), Results.EcusMissingInSecond);
 
                         foreach (var ecuComparison in Results.EcusComparisonResult)
                         {
                             if (options.CheckEcuIds(ecuComparison.FirstEcu.EcuId))
                             {
-                                AddEcuComparisonPage(column, new List<String> { $"ECU: {ecuComparison.FirstEcu.EcuId} ({ecuComparison.FirstEcu.EcuName})", $"ECU: {ecuComparison.SecondEcu.EcuId} ({ecuComparison.SecondEcu.EcuName})" }, ecuComparison);
+                                AddEcuComparisonPage(column, new List<Action<TextDescriptor>> { TextDescriptorFromFormattableString($"ECU: {ecuComparison.FirstEcu.EcuId:#FF673AB7} ({ecuComparison.FirstEcu.EcuName:#FF673AB7})"), TextDescriptorFromFormattableString($"ECU: {ecuComparison.SecondEcu.EcuId:#FF673AB7} ({ecuComparison.SecondEcu.EcuName:#FF673AB7})") }, ecuComparison);
                             }
                         }
                     });
@@ -84,31 +84,73 @@ namespace OdisBackupCompare
         }
 
 
-        private void AddEcuComparisonPage(ColumnDescriptor column, List<String> headerTexts, EcuComparisonResult ecuComparison)
+
+
+        private void AddEcuComparisonPage(ColumnDescriptor column, List<Action<TextDescriptor>> headerTexts, EcuComparisonResult ecuComparison)
         {
             var options = Results.Options;
 
             if (ecuComparison.MasterEcuDataMissingInFirst != null && ecuComparison.MasterEcuDataMissingInFirst.Any() && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInFirstFile)))
-                AddMissingEcuData(column, new List<String>(headerTexts) { $"MASTER ECU MISSING IN FIRST FILE ({ecuComparison.MasterEcuDataMissingInFirst.Count})" }, ecuComparison.MasterEcuDataMissingInFirst);
+                AddMissingEcuData(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"MASTER ECU MISSING IN FIRST FILE ({ecuComparison.MasterEcuDataMissingInFirst.Count:#FFE91E63})") }, ecuComparison.MasterEcuDataMissingInFirst);
             if (ecuComparison.MasterEcuDataMissingInSecond != null && ecuComparison.MasterEcuDataMissingInSecond.Any() && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInSecondFile)))
-                AddMissingEcuData(column, new List<String>(headerTexts) { $"MASTER ECU MISSING IN SECOND FILE ({ecuComparison.MasterEcuDataMissingInSecond.Count})" }, ecuComparison.MasterEcuDataMissingInSecond);
+                AddMissingEcuData(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"MASTER ECU MISSING IN SECOND FILE ({ecuComparison.MasterEcuDataMissingInSecond.Count:#FFE91E63})") }, ecuComparison.MasterEcuDataMissingInSecond);
 
-            AddEcuDataComparison(column, new List<String>(headerTexts) { $"MASTER ECU DATA DIFFERENCES ({ecuComparison.MasterEcuDataComparisonResult.Count} TYPES)" }, ecuComparison.MasterEcuDataComparisonResult);
+            AddEcuDataComparison(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"MASTER ECU DATA DIFFERENCES ({ecuComparison.MasterEcuDataComparisonResult.Count:#FFE91E63} TYPES)") }, ecuComparison.MasterEcuDataComparisonResult);
 
             if (ecuComparison.SubsystemEcuDataMissingInFirst != null && ecuComparison.SubsystemEcuDataMissingInFirst.Any() && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInFirstFile)))
-                AddMissingEcuData(column, new List<String>(headerTexts) { $"SUBSYSTEMS ECU MISSING IN FIRST FILE ({ecuComparison.SubsystemEcuDataMissingInFirst.Count})" }, ecuComparison.SubsystemEcuDataMissingInFirst);
+                AddMissingEcuData(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"SUBSYSTEMS ECU MISSING IN FIRST FILE ({ecuComparison.SubsystemEcuDataMissingInFirst.Count:#FFE91E63})") }, ecuComparison.SubsystemEcuDataMissingInFirst);
             if (ecuComparison.SubsystemEcuDataMissingInSecond != null && ecuComparison.SubsystemEcuDataMissingInSecond.Any() && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInSecondFile)))
-                AddMissingEcuData(column, new List<String>(headerTexts) { $"SUBSYSTEMS ECU MISSING IN SECOND FILE ({ecuComparison.SubsystemEcuDataMissingInSecond.Count})" }, ecuComparison.SubsystemEcuDataMissingInSecond);
+                AddMissingEcuData(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"SUBSYSTEMS ECU MISSING IN SECOND FILE ({ecuComparison.SubsystemEcuDataMissingInSecond.Count:#FFE91E63})") }, ecuComparison.SubsystemEcuDataMissingInSecond);
 
-            AddEcuDataComparison(column, new List<String>(headerTexts) { $"SUBSYSTEMS ECU DATA DIFFERENCES ({ecuComparison.SubsystemEcuDataComparisonResult.Count})" }, ecuComparison.SubsystemEcuDataComparisonResult);
+            AddEcuDataComparison(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"SUBSYSTEMS ECU DATA DIFFERENCES ({ecuComparison.SubsystemEcuDataComparisonResult.Count:#FFE91E63})") }, ecuComparison.SubsystemEcuDataComparisonResult);
         }
 
 
-        protected void AddEcuDataComparison(ColumnDescriptor column, List<String> mainHeaderTexts, List<EcuDataComparisonResult> comparisonResults)
+        // {(?<index>\d+):?(?<format>[^}]+)?}
+        protected Regex FormatRegex { get; set; } = new Regex("{(?<index>\\d+):?(?<format>[^}]+)?}");
+        protected Regex SplitRegex { get; set; } = new Regex("({.+?})");
+
+        protected Action<TextDescriptor> TextDescriptorFromFormattableString(FormattableString formattableString)
         {
-            List<String> headerTextsDifferences = null;
-            List<String> headerTextMissingFirst = null;
-            List<String> headerTextMissingSecond = null;
+            return (text) =>
+            {
+                var args = formattableString.GetArguments();
+
+                foreach (var s in SplitRegex.Split(formattableString.Format))
+                {
+                    var m = FormatRegex.Match(s);
+                    if (!m.Success)
+                        text.Span(s).Bold();
+                    else
+                    {
+                        var format = m.Groups["format"].Value;
+                        String argValue = args[Convert.ToInt32(m.Groups["index"].Value)].ToString();
+                        Color? color = null;
+
+                        if (!String.IsNullOrEmpty(format))
+                        {
+                            if (format.StartsWith("#"))
+                                color = Color.FromHex(format);
+                            else
+                            {
+                                argValue = String.Format("{0}",format, args[Convert.ToInt32(m.Groups["index"].Value)]);
+                            }
+                        }
+
+                        text.Span(argValue).Bold().FontColor(color ?? Colors.Black);
+                    }
+                }
+            };
+        }
+
+
+
+
+        protected void AddEcuDataComparison(ColumnDescriptor column, List<Action<TextDescriptor>> mainHeaderTexts, List<EcuDataComparisonResult> comparisonResults)
+        {
+            List<Action<TextDescriptor>> headerTextsDifferences = null;
+            List<Action<TextDescriptor>> headerTextMissingFirst = null;
+            List<Action<TextDescriptor>> headerTextMissingSecond = null;
             var options = Results.Options;
 
 
@@ -123,37 +165,35 @@ namespace OdisBackupCompare
                     if (match.Success)
                     {
                         // subsystem case
-                        headerTextsDifferences = new List<string>(mainHeaderTexts) { $"SUBSYSTEM #{i}: {match.Groups["subsystem"].Value}", $"TYPE: {match.Groups["type"].Value} ({comparisonResult.Differences.Count} DIFFERENCES)" };
-                        headerTextMissingFirst = new List<string>(mainHeaderTexts) { $"SUBSYSTEM #{i}: {match.Groups["subsystem"].Value}", $"TYPE: {match.Groups["type"].Value} ({comparisonResult.FieldsMissingInFirst.Count} FIELDS MISSING IN FIRST FILE)" };
-                        headerTextMissingSecond = new List<string>(mainHeaderTexts) { $"SUBSYSTEM #{i++}: {match.Groups["subsystem"].Value}", $"TYPE: {match.Groups["type"].Value} ({comparisonResult.FieldsMissingInSecond.Count} FIELDS MISSING IN SECOND FILE)" };
+                        headerTextsDifferences = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"SUBSYSTEM #{i}: {match.Groups["subsystem"].Value:#FF673AB7}"), TextDescriptorFromFormattableString($"TYPE: {match.Groups["type"].Value:#FFF57C00} ({comparisonResult.Differences.Count:#FFE91E63} DIFFERENCES)") };
+                        headerTextMissingFirst = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"SUBSYSTEM #{i}: {match.Groups["subsystem"].Value:#FF673AB7}"), TextDescriptorFromFormattableString($"TYPE: {match.Groups["type"].Value:#FFF57C00} ({comparisonResult.FieldsMissingInFirst.Count:#FFE91E63} FIELDS MISSING IN FIRST FILE)") };
+                        headerTextMissingSecond = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"SUBSYSTEM #{i++}: {match.Groups["subsystem"].Value:#FF673AB7}"), TextDescriptorFromFormattableString($"TYPE: {match.Groups["type"].Value:#FFF57C00} ({comparisonResult.FieldsMissingInSecond.Count:#FFE91E63} FIELDS MISSING IN SECOND FILE)") };
                     }
                 }
                 else
                 {
                     // master case
-                    headerTextsDifferences = new List<string>(mainHeaderTexts) { $"TYPE #{i}: {comparisonResult.Path[1]} ({comparisonResult.Differences.Count} DIFFERENCES)" };
-                    headerTextMissingFirst = new List<string>(mainHeaderTexts) { $"TYPE #{i}: {comparisonResult.Path[1]} ({comparisonResult.FieldsMissingInFirst.Count} FIELDS MISSING IN FIRST FILE)" };
-                    headerTextMissingSecond = new List<string>(mainHeaderTexts) { $"TYPE #{i++}: {comparisonResult.Path[1]} ({comparisonResult.FieldsMissingInSecond.Count} FIELDS MISSING IN SECOND FILE)" };
+                    headerTextsDifferences = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"TYPE #{i}: {comparisonResult.Path[1]:#FFF57C00} ({comparisonResult.Differences.Count:#FFE91E63} DIFFERENCES)") };
+                    headerTextMissingFirst = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"TYPE #{i}: {comparisonResult.Path[1]:#FFF57C00} ({comparisonResult.FieldsMissingInFirst.Count:#FFE91E63} FIELDS MISSING IN FIRST FILE)") };
+                    headerTextMissingSecond = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"TYPE #{i++}: {comparisonResult.Path[1]:#FFF57C00} ({comparisonResult.FieldsMissingInSecond.Count:#FFE91E63} FIELDS MISSING IN SECOND FILE)") };
                 }
 
 
                 if (comparisonResult.FieldsMissingInFirst != null && comparisonResult.FieldsMissingInFirst.Any() && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInFirstFile)))
-                    AddValueItemDataOnContainer(column.Item(), headerTextMissingFirst, comparisonResult.FieldsMissingInFirst);
+                    AddValueItemDataOnContainer(column.Item().MinHeight(300f), headerTextMissingFirst, comparisonResult.FieldsMissingInFirst);
 
                 if (comparisonResult.FieldsMissingInSecond != null && comparisonResult.FieldsMissingInSecond.Any() && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInSecondFile)))
-                    AddValueItemDataOnContainer(column.Item(), headerTextMissingSecond, comparisonResult.FieldsMissingInSecond);
+                    AddValueItemDataOnContainer(column.Item().MinHeight(300f), headerTextMissingSecond, comparisonResult.FieldsMissingInSecond);
 
                 if (comparisonResult.Differences != null && comparisonResult.Differences.Any() && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.Differences)))
-                    AddDifferencesDataOnContainer(column.Item(), headerTextsDifferences, comparisonResult.Differences);
-
-                column.Item().PageBreak();
+                    AddDifferencesDataOnContainer(column.Item().MinHeight(300f), headerTextsDifferences, comparisonResult.Differences);
             }
 
         }
 
 
 
-        protected void AddDifferencesDataOnContainer(IContainer container, List<String> headerTexts, List<DifferenceMessage> differences)
+        protected void AddDifferencesDataOnContainer(IContainer container, List<Action<TextDescriptor>> headerTexts, List<DifferenceMessage> differences)
         {
             var options = Results.Options;
 
@@ -177,7 +217,7 @@ namespace OdisBackupCompare
                 {
                     foreach (var s in headerTexts)
                     {
-                        header.Cell().ColumnSpan(10).Element(DifferenceHeaderCellStyle).AlignCenter().Text(s).Bold();
+                        header.Cell().ColumnSpan(10).Element(DifferenceHeaderCellStyle).AlignCenter().Text(s);
                     }
                     header.Cell().ColumnSpan(10).Element(DifferenceHeaderCellStyle).AlignCenter().Text("Path").Bold();
                     //header.Cell().ColumnSpan(3).Element(DifferenceHeaderCellStyle).Text("Description 2").Bold();
@@ -194,8 +234,8 @@ namespace OdisBackupCompare
                         table.Cell().ColumnSpan(10).Element(DifferenceCellStyle).AlignLeft().Shrink().ShowEntire().Text($"{i++}: {difference.GetPathDisplayString()}").Bold();
                         //table.Cell().ColumnSpan(3).Element(DifferenceCellStyle).Shrink().ShowEntire().Text(difference.FieldDescriptions.Count > 1 ? difference.FieldDescriptions[1] : String.Empty);
                         //table.Cell().ColumnSpan(2).Element(DifferenceCellStyle).Shrink().ShowEntire().Text(JsonSerializer.Serialize(difference.FieldProperty, Options.JsonSerializerOptions));
-                        table.Cell().ColumnSpan(5).Element(DifferenceCellStyle).AlignCenter().Shrink().ShowEntire().Text(AddColoredText(difference.FirstValue, difference.SecondValue, difference.FieldParameters, Colors.Red.Medium));
-                        table.Cell().ColumnSpan(5).Element(DifferenceCellStyle).AlignCenter().Shrink().ShowEntire().Text(AddColoredText(difference.SecondValue, difference.FirstValue, difference.FieldParameters, Colors.Green.Medium));
+                        table.Cell().ColumnSpan(5).Element(DifferenceCellStyle).AlignCenter().Shrink().ShowEntire().Text(AddColoredText(difference.FirstValue, difference.SecondValue, difference.FieldParameters, Colors.Red.Darken2));
+                        table.Cell().ColumnSpan(5).Element(DifferenceCellStyle).AlignCenter().Shrink().ShowEntire().Text(AddColoredText(difference.SecondValue, difference.FirstValue, difference.FieldParameters, Colors.Green.Darken2));
                     }
                 }
             });
@@ -206,7 +246,7 @@ namespace OdisBackupCompare
         {
             return (text) =>
             {
-                if (!fieldParameters.HasFlag(FieldParametersEnum.IsFreeText))
+                if (!fieldParameters.HasFlag(FieldParametersEnum.IsFreeText) || fieldParameters.HasFlag(FieldParametersEnum.IsNumerical))
                     text.Span(value1).FontColor(value1 != value2 ? color : Colors.Black);
                 else
                 {
@@ -214,7 +254,7 @@ namespace OdisBackupCompare
                     {
                         if (i >= (value2?.Length ?? 0))
                         {
-                            text.Span(value1[i].ToString()).FontColor(Colors.Blue.Medium);
+                            text.Span(value1[i].ToString()).FontColor(Colors.Blue.Darken2);
                         }
                         else
                         {
@@ -231,11 +271,11 @@ namespace OdisBackupCompare
 
 
 
-        protected void AddMissingEcuData(ColumnDescriptor column, List<String> mainHeaderTexts, Dictionary<String, EcuData> missingEcuData)
+        protected void AddMissingEcuData(ColumnDescriptor column, List<Action<TextDescriptor>> mainHeaderTexts, Dictionary<String, EcuData> missingEcuData)
         {
             column.Spacing(10);
 
-            List<String> headerTexts = null;
+            List<Action<TextDescriptor>> headerTexts = null;
 
             int i = 1;
             foreach (var ecuData in missingEcuData)
@@ -244,24 +284,22 @@ namespace OdisBackupCompare
                 if (match.Success)
                 {
                     // subsystem case
-                    headerTexts = new List<string>(mainHeaderTexts) { $"SUBSYSTEM #{i++}: {match.Groups["subsystem"].Value}", $"TYPE: {match.Groups["type"].Value}" };
+                    headerTexts = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"SUBSYSTEM #{i++}: {match.Groups["subsystem"].Value:#FF673AB7}"), TextDescriptorFromFormattableString($"TYPE: {match.Groups["type"].Value:#FFF57C00}") };
                 }
                 else
                 {
                     // master case
-                    headerTexts = new List<string>(mainHeaderTexts) { $"ECU #{i++}: {ecuData.Value.DisplayName ?? ecuData.Value.TiName}", $"TYPE: {ecuData.Key}" };
+                    headerTexts = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"ECU #{i++}: {ecuData.Value.DisplayName ?? ecuData.Value.TiName:#FF673AB7}"), TextDescriptorFromFormattableString($"TYPE: {ecuData.Key:#FFF57C00}") };
                 }
 
 
-                AddValueItemDataOnContainer(column.Item(), headerTexts, ecuData.Value.Values.Dictionary);
-
-                column.Item().PageBreak();
+                AddValueItemDataOnContainer(column.Item().MinHeight(300f), headerTexts, ecuData.Value.Values.Dictionary);
             }
         }
 
 
 
-        protected void AddValueItemDataOnContainer(IContainer container, List<String> headerTexts, Dictionary<String, ValueItem> valueItems)
+        protected void AddValueItemDataOnContainer(IContainer container, List<Action<TextDescriptor>> headerTexts, Dictionary<String, ValueItem> valueItems)
         {
             if (valueItems.Count > 0)
             {
@@ -277,7 +315,7 @@ namespace OdisBackupCompare
                      {
                          foreach (var s in headerTexts)
                          {
-                             header.Cell().ColumnSpan(2).Element(HeaderCellStyle).AlignCenter().Text(s).Bold();
+                             header.Cell().ColumnSpan(2).Element(HeaderCellStyle).AlignCenter().Text(s);
                          }
                          header.Cell().Element(HeaderCellStyle).AlignCenter().Text("Name").Bold();
                          header.Cell().Element(HeaderCellStyle).AlignCenter().Text("Value").Bold();
@@ -289,7 +327,7 @@ namespace OdisBackupCompare
                          if (valueItem.SubValues?.Count > 0)
                          {
                              table.Cell().Element(CellStyle).AlignLeft().Shrink().ShowEntire().Text($"{i++}: {valueItem.GetName()}").Bold();
-                             AddValueItemDataOnContainer(table.Cell().Element(CellStyle).AlignCenter(), new List<string>(), valueItem.SubValues.Dictionary);
+                             AddValueItemDataOnContainer(table.Cell().Element(CellStyle).AlignCenter(), new List<Action<TextDescriptor>>(), valueItem.SubValues.Dictionary);
                          }
                          else
                          {
@@ -302,11 +340,11 @@ namespace OdisBackupCompare
         }
 
 
-        private void AddMissingEcusNewPage(ColumnDescriptor column, String headerText, Dictionary<String, Ecu> missingEcus)
+        private void AddMissingEcusNewPage(ColumnDescriptor column, Action<TextDescriptor> headerText, Dictionary<String, Ecu> missingEcus)
         {
             column.Spacing(10);
 
-            column.Item().Table(table =>
+            column.Item().MinHeight(300f).Table(table =>
                 {
                     table.ColumnsDefinition(columns =>
                     {
@@ -318,7 +356,7 @@ namespace OdisBackupCompare
 
                     table.Header(header =>
                     {
-                        header.Cell().ColumnSpan(4).Element(HeaderCellStyle).AlignCenter().Text(headerText).Bold();
+                        header.Cell().ColumnSpan(4).Element(HeaderCellStyle).AlignCenter().Text(headerText);
                         header.Cell().Element(HeaderCellStyle).AlignCenter().Text("Id").Bold();
                         header.Cell().Element(HeaderCellStyle).AlignCenter().Text("Name").Bold();
                         header.Cell().Element(HeaderCellStyle).AlignCenter().Text("LogicalLink").Bold();
@@ -335,8 +373,6 @@ namespace OdisBackupCompare
                     }
 
                 });
-
-            column.Item().PageBreak();
         }
 
 
