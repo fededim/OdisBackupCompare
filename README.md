@@ -114,13 +114,13 @@ Numerical values are compared figure by figure and differences are highlighted i
 
 ## Comparison summary
 
-<img width="2674" height="1882" alt="image" src="https://github.com/user-attachments/assets/70a6d412-c7c7-4fbe-a6b6-fd2767068ffb" />
+<img width="2532" height="1763" alt="image" src="https://github.com/user-attachments/assets/7a7253e8-2eb2-401f-aeef-54baa285492c" />
 
-<img width="2661" height="1886" alt="image" src="https://github.com/user-attachments/assets/d04350f9-d34a-4b36-bb34-ede072aa81ac" />
+<img width="2557" height="1776" alt="image" src="https://github.com/user-attachments/assets/b136e341-07bf-4999-b834-c64e86ad6e8a" />
 
 ## Missing ECUs
 
-<img width="2333" height="1652" alt="image" src="https://github.com/user-attachments/assets/0c96f752-5089-4882-a370-7c760bc0910e" />
+<img width="2533" height="437" alt="image" src="https://github.com/user-attachments/assets/19457848-412c-456a-b974-f75c871ba7e6" />
 
 ## Missing ECUS from subsystems
 
