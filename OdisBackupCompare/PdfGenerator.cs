@@ -144,14 +144,14 @@ namespace OdisBackupCompare
             if (ecuComparison.MasterEcuDataMissingInSecond != null && ecuComparison.MasterEcuDataMissingInSecond.Any() && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInSecondFile)))
                 AddMissingEcuData(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"MASTER ECU MISSING IN SECOND FILE ({ecuComparison.MasterEcuDataMissingInSecond.Count:@HeaderDifferenceNumberColor})") }, ecuComparison.MasterEcuDataMissingInSecond);
 
-            AddEcuDataComparison(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"MASTER ECU DATA DIFFERENCES ({ecuComparison.MasterEcuDataComparisonResult.Count:@HeaderDifferenceNumberColor} TYPES)") }, ecuComparison.MasterEcuDataComparisonResult);
+            AddEcuDataComparison(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"MASTER ECU SETTING DIFFERENCES ({ecuComparison.MasterEcuDataComparisonResult.Count:@HeaderDifferenceNumberColor} TYPES)") }, ecuComparison.MasterEcuDataComparisonResult);
 
             if (ecuComparison.SubsystemEcuDataMissingInFirst != null && ecuComparison.SubsystemEcuDataMissingInFirst.Any() && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInFirstFile)))
                 AddMissingEcuData(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"SUBSYSTEMS ECU MISSING IN FIRST FILE ({ecuComparison.SubsystemEcuDataMissingInFirst.Count:@HeaderDifferenceNumberColor})") }, ecuComparison.SubsystemEcuDataMissingInFirst);
             if (ecuComparison.SubsystemEcuDataMissingInSecond != null && ecuComparison.SubsystemEcuDataMissingInSecond.Any() && (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInSecondFile)))
                 AddMissingEcuData(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"SUBSYSTEMS ECU MISSING IN SECOND FILE ({ecuComparison.SubsystemEcuDataMissingInSecond.Count:@HeaderDifferenceNumberColor})") }, ecuComparison.SubsystemEcuDataMissingInSecond);
 
-            AddEcuDataComparison(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"SUBSYSTEMS ECU DATA DIFFERENCES ({ecuComparison.SubsystemEcuDataComparisonResult.Count:@HeaderDifferenceNumberColor})") }, ecuComparison.SubsystemEcuDataComparisonResult);
+            AddEcuDataComparison(column, new List<Action<TextDescriptor>>(headerTexts) { TextDescriptorFromFormattableString($"SUBSYSTEMS ECU SETTINGS DIFFERENCES ({ecuComparison.SubsystemEcuDataComparisonResult.Count:@HeaderDifferenceNumberColor})") }, ecuComparison.SubsystemEcuDataComparisonResult);
         }
 
 
@@ -417,8 +417,8 @@ namespace OdisBackupCompare
 
                     foreach (var ecu in missingEcus.Values)
                     {
-                        table.Cell().Element(CellStyle).AlignCenter().Shrink().ShowEntire().Text(ecu.EcuId).Bold();
-                        table.Cell().Element(CellStyle).AlignCenter().Shrink().ShowEntire().Text(ecu.EcuName).Bold();
+                        table.Cell().Element(CellStyle).AlignCenter().Shrink().ShowEntire().Text(TextDescriptorFromFormattableString($"{ecu.EcuId:@HeaderECUColor}"));
+                        table.Cell().Element(CellStyle).AlignCenter().Shrink().ShowEntire().Text(TextDescriptorFromFormattableString($"{ecu.EcuName:@HeaderECUColor}"));
                         table.Cell().Element(CellStyle).AlignCenter().Shrink().ShowEntire().Text(ecu.LogicalLink);
                         table.Cell().Element(CellStyle).AlignCenter().Shrink().ShowEntire().Text(ecu.TesterOdxVariant);
                     }

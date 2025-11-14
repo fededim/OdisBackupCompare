@@ -251,56 +251,56 @@ namespace Fededim.OdisBackupCompare.Data
                 if (!Options.CheckEcuIds(ecr.EcuId))
                     continue;
 
-                // MASTER ECU DATA MISSING
+                // MASTER ECU SETTINGS MISSING
                 if (Options.CheckEnumerableOption(Options.ComparisonOptions, ComparisonOptionsEnum.DataMissingInFirstFile))
-                    results.AddRange(ecr.MasterEcuDataMissingInFirst.Select(mf => new SummaryComparisonResults { EcuId = ecr.EcuId, DifferenceType = DifferenceStatisticsEnum.SettingsMissingInFirstFile, Type = mf.Key, Count = mf.Key.Length }).ToList());
+                    results.AddRange(ecr.MasterEcuDataMissingInFirst.Select(mf => new SummaryComparisonResults { EcuId = $"{ecr.EcuId} {ecr.FirstEcu.EcuName}", DifferenceType = DifferenceStatisticsEnum.SettingsMissingInFirstFile, Type = mf.Key, Count = mf.Key.Length }).ToList());
 
                 if (Options.CheckEnumerableOption(Options.ComparisonOptions, ComparisonOptionsEnum.DataMissingInSecondFile))
-                    results.AddRange(ecr.MasterEcuDataMissingInSecond.Select(ms => new SummaryComparisonResults { EcuId = ecr.EcuId, DifferenceType = DifferenceStatisticsEnum.SettingsMissingInSecondFile, Type = ms.Key, Count = ms.Key.Length }).ToList());
+                    results.AddRange(ecr.MasterEcuDataMissingInSecond.Select(ms => new SummaryComparisonResults { EcuId = $"{ecr.EcuId} {ecr.FirstEcu.EcuName}", DifferenceType = DifferenceStatisticsEnum.SettingsMissingInSecondFile, Type = ms.Key, Count = ms.Key.Length }).ToList());
 
-                // MASTER ECU DATA DIFFERENCES
+                // MASTER ECU SETTINGS DIFFERENCES
                 if (Options.CheckEnumerableOption(Options.ComparisonOptions, ComparisonOptionsEnum.Differences))
                     foreach (var ec in ecr.MasterEcuDataComparisonResult)
                     {
                         if (ec.FieldsMissingInFirst?.Count > 0 && Options.CheckEnumerableOption(Options.ComparisonOptions, ComparisonOptionsEnum.DataMissingInFirstFile))
-                            results.Add(new SummaryComparisonResults { EcuId = ecr.EcuId, DifferenceType = DifferenceStatisticsEnum.FieldsMissingInFirstFile, Type = MeaningfulText.Map(ec.First.Type), Count = ec.FieldsMissingInFirst.Count });
+                            results.Add(new SummaryComparisonResults { EcuId = $"{ecr.EcuId} {ecr.FirstEcu.EcuName}", DifferenceType = DifferenceStatisticsEnum.FieldsMissingInFirstFile, Type = MeaningfulText.Map(ec.First.Type), Count = ec.FieldsMissingInFirst.Count });
 
                         if (ec.FieldsMissingInSecond?.Count > 0 && Options.CheckEnumerableOption(Options.ComparisonOptions, ComparisonOptionsEnum.DataMissingInSecondFile))
-                            results.Add(new SummaryComparisonResults { EcuId = ecr.EcuId, DifferenceType = DifferenceStatisticsEnum.FieldsMissingInSecondFile, Type = MeaningfulText.Map(ec.First.Type), Count = ec.FieldsMissingInSecond.Count });
+                            results.Add(new SummaryComparisonResults { EcuId = $"{ecr.EcuId} {ecr.FirstEcu.EcuName}", DifferenceType = DifferenceStatisticsEnum.FieldsMissingInSecondFile, Type = MeaningfulText.Map(ec.First.Type), Count = ec.FieldsMissingInSecond.Count });
 
                         if (ec.Differences?.Count > 0)
-                            results.Add(new SummaryComparisonResults { EcuId = ecr.EcuId, DifferenceType = DifferenceStatisticsEnum.DifferentValues, Type = MeaningfulText.Map(ec.First.Type), Count = ec.Differences.Count(df => !Options.CheckEnumerableOption(Options.BypassFields, df.FieldProperty)) });
+                            results.Add(new SummaryComparisonResults { EcuId = $"{ecr.EcuId} {ecr.FirstEcu.EcuName}", DifferenceType = DifferenceStatisticsEnum.DifferentValues, Type = MeaningfulText.Map(ec.First.Type), Count = ec.Differences.Count(df => !Options.CheckEnumerableOption(Options.BypassFields, df.FieldProperty)) });
                     }
 
-                // SUBSSYSTEM DATA MISSING IN FIRST
+                // SUBSSYSTEM SETTINGS MISSING IN FIRST
                 if (ecr.SubsystemEcuDataMissingInFirst != null && Options.CheckEnumerableOption(Options.ComparisonOptions, ComparisonOptionsEnum.DataMissingInFirstFile))
                     foreach (var kvp in ecr.SubsystemEcuDataMissingInFirst)
                     {
                         var EcuIdType = EcuComparisonResult.ExtractSubsystemEcuAndTypeFromKey(kvp.Key);
-                        results.Add(new SummaryComparisonResults { EcuId = $"{ecr.EcuId}_SUB_{EcuIdType.EcuId}", DifferenceType = DifferenceStatisticsEnum.SettingsMissingInFirstFile, Type = EcuIdType.Type, Count = kvp.Value.Values.Count });
+                        results.Add(new SummaryComparisonResults { EcuId = $"{ecr.EcuId} SUBSYSTEM: {EcuIdType.EcuId}", DifferenceType = DifferenceStatisticsEnum.SettingsMissingInFirstFile, Type = EcuIdType.Type, Count = kvp.Value.Values.Count });
                     }
 
-                // SUBSSYSTEM DATA MISSING IN SECOND
+                // SUBSSYSTEM SETTINGS MISSING IN SECOND
                 if (ecr.SubsystemEcuDataMissingInSecond != null && Options.CheckEnumerableOption(Options.ComparisonOptions, ComparisonOptionsEnum.DataMissingInSecondFile))
                     foreach (var kvp in ecr.SubsystemEcuDataMissingInSecond)
                     {
                         var EcuIdType = EcuComparisonResult.ExtractSubsystemEcuAndTypeFromKey(kvp.Key);
-                        results.Add(new SummaryComparisonResults { EcuId = $"{ecr.EcuId}_SUB_{EcuIdType.EcuId}", DifferenceType = DifferenceStatisticsEnum.SettingsMissingInSecondFile, Type = EcuIdType.Type, Count = kvp.Value.Values.Count });
+                        results.Add(new SummaryComparisonResults { EcuId = $"{ecr.EcuId} SUBSYSTEM: {EcuIdType.EcuId}", DifferenceType = DifferenceStatisticsEnum.SettingsMissingInSecondFile, Type = EcuIdType.Type, Count = kvp.Value.Values.Count });
                     }
 
-                // SUBSSYSTEM DATA DIFFERENCES
+                // SUBSSYSTEM SETTINGS DIFFERENCES
                 if (Options.CheckEnumerableOption(Options.ComparisonOptions, ComparisonOptionsEnum.Differences))
                     foreach (var sc in ecr.SubsystemEcuDataComparisonResult)
                     {
                         var EcuIdType = EcuComparisonResult.ExtractSubsystemEcuAndTypeFromKey(sc.Path[2]);
 
                         if (Options.CheckEnumerableOption(Options.ComparisonOptions, ComparisonOptionsEnum.DataMissingInFirstFile))
-                            results.Add(new SummaryComparisonResults { EcuId = $"{ecr.EcuId}_SUB_{EcuIdType.EcuId}", DifferenceType = DifferenceStatisticsEnum.FieldsMissingInFirstFile, Type = EcuIdType.Type, Count = sc.FieldsMissingInFirst.Count });
+                            results.Add(new SummaryComparisonResults { EcuId = $"{ecr.EcuId} SUBSYSTEM: {EcuIdType.EcuId}", DifferenceType = DifferenceStatisticsEnum.FieldsMissingInFirstFile, Type = EcuIdType.Type, Count = sc.FieldsMissingInFirst.Count });
 
                         if (Options.CheckEnumerableOption(Options.ComparisonOptions, ComparisonOptionsEnum.DataMissingInSecondFile))
-                            results.Add(new SummaryComparisonResults { EcuId = $"{ecr.EcuId}_SUB_{EcuIdType.EcuId}", DifferenceType = DifferenceStatisticsEnum.FieldsMissingInSecondFile, Type = EcuIdType.Type, Count = sc.FieldsMissingInSecond.Count });
+                            results.Add(new SummaryComparisonResults { EcuId = $"{ecr.EcuId} SUBSYSTEM: {EcuIdType.EcuId}", DifferenceType = DifferenceStatisticsEnum.FieldsMissingInSecondFile, Type = EcuIdType.Type, Count = sc.FieldsMissingInSecond.Count });
 
-                        results.Add(new SummaryComparisonResults { EcuId = $"{ecr.EcuId}_SUB_{EcuIdType.EcuId}", DifferenceType = DifferenceStatisticsEnum.DifferentValues, Type = EcuIdType.Type, Count = sc.Differences.Count(df => !Options.CheckEnumerableOption(Options.BypassFields, df.FieldProperty)) });
+                        results.Add(new SummaryComparisonResults { EcuId = $"{ecr.EcuId} SUBSYSTEM: {EcuIdType.EcuId}", DifferenceType = DifferenceStatisticsEnum.DifferentValues, Type = EcuIdType.Type, Count = sc.Differences.Count(df => !Options.CheckEnumerableOption(Options.BypassFields, df.FieldProperty)) });
                     }
             }
 

@@ -170,3 +170,8 @@ v1.0.5
 - Bugfix: removed duplicated row in a table header
 - Improvement: added general comparison statistics in PDF output
 - Improvement: changed the color of the type field (adaptation, coding, identification)
+
+v1.0.6
+- Improvement: added control unit name and improved subsystems name in the Comparison Summary section
+- Improvement: added color in tables ECUs MISSING IN XXX FILE
+- Improvement: renamed ECU DATA DIFFERENCES into a more meaningful ECU SETTING DIFFERENCES
