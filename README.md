@@ -93,6 +93,11 @@ OdisBackupCompare -i &lt;path to XML file1&gt; &lt;path to XML file2&gt; -b Disp
 [Download here from GitHub](https://raw.githubusercontent.com/fededim/OdisBackupCompare/main/OdisBackupCompare/SampleXML/OdisBackupCompare_output_sample.pdf)
 
 The full unfiltered PDF is composed of these sections:
+- Comparison summary
+    - Total differences by type (**ADAPTATION, CODING, IDENTIFICATION**)
+    - Total differences by difference type (**DifferentValues, SettingsMissingInFirstFile, SettingsMissingInSecondFile, FieldsMissingInFirstFile,FieldsMissingInSecondFile**)
+    - Total differences by ecus / subsystems
+    - Total differences by ecus / subsystems - type
 - ECUs missing in first file
 - ECUs missing in second file
 - For every ECUs
@@ -106,6 +111,12 @@ Numerical values are compared figure by figure and differences are highlighted i
 - red in the first file (highlighting the possible error)
 - green in the second file (highlighting the possible good value)
 - blue in the second file for any figure not found in the first one (highlighting either a bigger value or a difference in values length due to the different firmware/hardware part numbers)
+
+## Comparison summary
+
+<img width="2674" height="1882" alt="image" src="https://github.com/user-attachments/assets/70a6d412-c7c7-4fbe-a6b6-fd2767068ffb" />
+
+<img width="2661" height="1886" alt="image" src="https://github.com/user-attachments/assets/d04350f9-d34a-4b36-bb34-ede072aa81ac" />
 
 ## Missing ECUs
 
