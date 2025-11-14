@@ -92,6 +92,8 @@ namespace OdisBackupCompare
                 comparisonResult = odisDataComparer.CompareEcus(firstEcus, secondEcus);
 
                 logger.LogInformation($"Successfully compared the ODIS XML files {inputFiles[0]} and {inputFiles[1]}");
+
+                logger.LogInformation(comparisonResult.GetStatisticsSummary());
             }
 
             var outFolder = o.Output ?? ".";

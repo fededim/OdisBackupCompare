@@ -5,7 +5,7 @@
 		<TargetFramework>net8.0</TargetFramework>
 		<ImplicitUsings>disable</ImplicitUsings>
 
-		<Version>1.0.4</Version>
+		<Version>1.0.5</Version>
 		<Authors>Federico Di Marco &lt;fededim@gmail.com&gt;</Authors>
 		<Description>OdisBackupCompare is a tool for extracting the differences between two Volkswagen Odis XML backup files and exporting them in various formats (JSON/PDF).</Description>
 		<Copyright>$([System.DateTime]::UtcNow.Year) Federico Di Marco &lt;fededim@gmail.com&gt;</Copyright>
@@ -42,7 +42,12 @@
 			v1.0.4
 			- Improvement: added optional standard configuration file named appsetting.json
 			- Improvement: added customization of colors inside an optional appsetting.json file for theming PDF output files
-		</PackageReleaseNotes>
+
+			v1.0.5
+			- Bugfix: removed duplicated row in a table header
+			- Improvement: added general comparison statistics in PDF output
+			- Improvement: changed the color of the type field (adaptation, coding, identification)
+</PackageReleaseNotes>
 
 	</PropertyGroup>
 
@@ -58,6 +63,9 @@
 
 	<ItemGroup>
 		<None Update="appsettings.json">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="SampleXML\BCKLAST_WVWZZZAUZHP345715_20251113T184053.xml">
 		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 		<None Update="SampleXML\FullBackup_PXC_WVWZZZAUZEW070736_20250315T173802.xml">
