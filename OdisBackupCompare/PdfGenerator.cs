@@ -1,20 +1,19 @@
-﻿using QuestPDF.Fluent;
+﻿using Fededim.OdisBackupCompare.Data;
+using Microsoft.Extensions.Logging;
+using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using System.Text.RegularExpressions;
-using Fededim.OdisBackupCompare.Data;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
-using Microsoft.Extensions.Logging;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace OdisBackupCompare
 {
     public class PdfGenerator : IDocument
     {
         protected ComparisonResults Results { get; }
-        protected Regex SubsystemDataKey { get; }
 
         protected ILogger<PdfGenerator> Logger { get; }
 
@@ -22,7 +21,6 @@ namespace OdisBackupCompare
         {
             Results = results;
             Logger = logger;
-            SubsystemDataKey = new Regex($"(?<subsystem>.+)_(?<type>{String.Join('|', MeaningfulText.RemapData.Values.ToList())})");
         }
 
         public DocumentMetadata GetMetadata() => DocumentMetadata.Default;
@@ -38,6 +36,8 @@ namespace OdisBackupCompare
 
                     page.Content().Column(column =>
                     {
+                        GenerateStatisticsPage(column, Results);
+
                         if (!options.ComparisonOptions.Any() || options.ComparisonOptions.Contains(ComparisonOptionsEnum.DataMissingInFirstFile) && Results.EcusMissingInFirst.Any())
                             AddMissingEcusNewPage(column, TextDescriptorFromFormattableString($"ECUs MISSING IN FIRST FILE ({Results.EcusMissingInFirst.Count:@HeaderDifferenceNumberColor})"), Results.EcusMissingInFirst);
 
@@ -54,6 +54,55 @@ namespace OdisBackupCompare
                     });
                 });
         }
+
+
+        protected void GenerateStatisticsPage(ColumnDescriptor column, ComparisonResults result)
+        {
+            column.Item().Padding(10).MinHeight(300).Table(table =>
+            {
+                table.ColumnsDefinition(columns =>
+                {
+                    columns.RelativeColumn(0.9f);
+                    columns.RelativeColumn(0.1f);
+                });
+
+                table.Header(header =>
+                {
+                    header.Cell().Element(DifferenceHeaderCellStyle).AlignCenter().Text("Comparison summary").Bold();
+                    header.Cell().Element(DifferenceHeaderCellStyle).AlignCenter().Text("Count").Bold();
+                });
+
+                int[] numGroupPrints = new int[] { 0, 0, 0 };
+
+                var statistics = result.GetStatistics();
+                SummaryComparisonResults oldStat = null;
+
+                for (int i = 0; i < statistics.Count; i++)
+                {
+                    var stat = statistics[i];
+
+                    if (oldStat != null && ((String.IsNullOrEmpty(stat.EcuId) ^ String.IsNullOrEmpty(oldStat.EcuId)) || ((String.IsNullOrEmpty(stat.Type) ^ String.IsNullOrEmpty(oldStat.Type)) && stat.EcuId != oldStat.EcuId) || (stat.DifferenceType.HasValue ^ oldStat.DifferenceType.HasValue)))
+                        table.Cell().ColumnSpan(2).Element(DifferenceCellStyle).AlignLeft().ShowEntire().Text("");
+
+                    if (!String.IsNullOrEmpty(stat.EcuId) && !String.IsNullOrEmpty(stat.Type))
+                        table.Cell().Element(DifferenceCellStyle).AlignLeft().Text(TextDescriptorFromFormattableString($"{stat.EcuId:@HeaderECUColor} - {stat.Type:@HeaderTypeColor}"));
+                    else
+                    {
+                        if (!String.IsNullOrEmpty(stat.EcuId))
+                            table.Cell().Element(DifferenceCellStyle).AlignLeft().ShowEntire().Text(TextDescriptorFromFormattableString($"{stat.EcuId:@HeaderECUColor}"));
+                        if (!String.IsNullOrEmpty(stat.Type))
+                            table.Cell().Element(DifferenceCellStyle).AlignLeft().ShowEntire().Text(TextDescriptorFromFormattableString($"{stat.Type:@HeaderTypeColor}"));
+                        if (stat.DifferenceType.HasValue)
+                            table.Cell().Element(DifferenceCellStyle).AlignLeft().ShowEntire().Text(TextDescriptorFromFormattableString($"{stat.DifferenceType:@HeaderDifferenceTypeColor}"));
+                    }
+
+                    table.Cell().Element(DifferenceCellStyle).AlignCenter().Shrink().ShowEntire().Text(TextDescriptorFromFormattableString($"{stat.Count:@HeaderDifferenceNumberColor}"));
+
+                    oldStat = stat;
+                }
+            });
+        }
+
 
 
         protected IContainer HeaderCellStyle(IContainer container) => DefaultCellStyle(container, Results.Options.AppSettings.ColorOptions.GetColor("TableHeaderColor"));
@@ -86,7 +135,7 @@ namespace OdisBackupCompare
 
 
 
-        private void AddEcuComparisonPage(ColumnDescriptor column, List<Action<TextDescriptor>> headerTexts, EcuComparisonResult ecuComparison)
+        protected void AddEcuComparisonPage(ColumnDescriptor column, List<Action<TextDescriptor>> headerTexts, EcuComparisonResult ecuComparison)
         {
             var options = Results.Options;
 
@@ -135,7 +184,7 @@ namespace OdisBackupCompare
                                 color = Color.FromHex(Results.Options.AppSettings.ColorOptions.GetColor(format.Substring(1)));
                             else
                             {
-                                argValue = String.Format("{0}",format, args[Convert.ToInt32(m.Groups["index"].Value)]);
+                                argValue = String.Format("{0}", format, args[Convert.ToInt32(m.Groups["index"].Value)]);
                             }
                         }
 
@@ -163,13 +212,13 @@ namespace OdisBackupCompare
 
                 if (comparisonResult.Path[1] == "subsystem")
                 {
-                    var match = SubsystemDataKey.Match(comparisonResult.Path[2]);
-                    if (match.Success)
+                    var EcuIdType = EcuComparisonResult.ExtractSubsystemEcuAndTypeFromKey(comparisonResult.Path[2]);
+                    if (!String.IsNullOrEmpty(EcuIdType.EcuId))
                     {
                         // subsystem case
-                        headerTextsDifferences = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"SUBSYSTEM #{i}: {match.Groups["subsystem"].Value:@HeaderECUColor}"), TextDescriptorFromFormattableString($"TYPE: {match.Groups["type"].Value:@HeaderTypeColor} ({comparisonResult.Differences.Count:@HeaderDifferenceNumberColor} DIFFERENCES)") };
-                        headerTextMissingFirst = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"SUBSYSTEM #{i}: {match.Groups["subsystem"].Value:@HeaderECUColor}"), TextDescriptorFromFormattableString($"TYPE: {match.Groups["type"].Value:@HeaderTypeColor} ({comparisonResult.FieldsMissingInFirst.Count:@HeaderDifferenceNumberColor} FIELDS MISSING IN FIRST FILE)") };
-                        headerTextMissingSecond = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"SUBSYSTEM #{i++}: {match.Groups["subsystem"].Value:@HeaderECUColor}"), TextDescriptorFromFormattableString($"TYPE: {match.Groups["type"].Value:@HeaderTypeColor} ({comparisonResult.FieldsMissingInSecond.Count:@HeaderDifferenceNumberColor} FIELDS MISSING IN SECOND FILE)") };
+                        headerTextsDifferences = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"SUBSYSTEM #{i}: {EcuIdType.EcuId:@HeaderECUColor}"), TextDescriptorFromFormattableString($"TYPE: {EcuIdType.Type:@HeaderTypeColor} ({comparisonResult.Differences.Count:@HeaderDifferenceNumberColor} DIFFERENCES)") };
+                        headerTextMissingFirst = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"SUBSYSTEM #{i}: {EcuIdType.EcuId:@HeaderECUColor}"), TextDescriptorFromFormattableString($"TYPE: {EcuIdType.Type:@HeaderTypeColor} ({comparisonResult.FieldsMissingInFirst.Count:@HeaderDifferenceNumberColor} FIELDS MISSING IN FIRST FILE)") };
+                        headerTextMissingSecond = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"SUBSYSTEM #{i++}: {EcuIdType.EcuId:@HeaderECUColor}"), TextDescriptorFromFormattableString($"TYPE: {EcuIdType.Type:@HeaderTypeColor} ({comparisonResult.FieldsMissingInSecond.Count:@HeaderDifferenceNumberColor} FIELDS MISSING IN SECOND FILE)") };
                     }
                 }
                 else
@@ -282,16 +331,16 @@ namespace OdisBackupCompare
             int i = 1;
             foreach (var ecuData in missingEcuData)
             {
-                var match = SubsystemDataKey.Match(ecuData.Key);
-                if (match.Success)
+                var EcuIdType = EcuComparisonResult.ExtractSubsystemEcuAndTypeFromKey(ecuData.Key);
+                if (!String.IsNullOrEmpty(EcuIdType.EcuId))
                 {
                     // subsystem case
-                    headerTexts = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"SUBSYSTEM #{i++}: {match.Groups["subsystem"].Value:@HeaderECUColor}"), TextDescriptorFromFormattableString($"TYPE: {match.Groups["type"].Value:@HeaderTypeColor}") };
+                    headerTexts = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"SUBSYSTEM #{i++}: {EcuIdType.EcuId:@HeaderECUColor}"), TextDescriptorFromFormattableString($"TYPE: {EcuIdType.Type:@HeaderTypeColor} ({ecuData.Value.Values.Count:@HeaderDifferenceNumberColor} MISSING)") };
                 }
                 else
                 {
                     // master case
-                    headerTexts = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"ECU #{i++}: {ecuData.Value.DisplayName ?? ecuData.Value.TiName:@HeaderECUColor}"), TextDescriptorFromFormattableString($"TYPE: {ecuData.Key:@HeaderTypeColor}") };
+                    headerTexts = new List<Action<TextDescriptor>>(mainHeaderTexts) { TextDescriptorFromFormattableString($"TYPE: {ecuData.Key:@HeaderTypeColor} ({ecuData.Value.Values.Count:@HeaderDifferenceNumberColor} MISSING)") };
                 }
 
 
@@ -342,7 +391,7 @@ namespace OdisBackupCompare
         }
 
 
-        private void AddMissingEcusNewPage(ColumnDescriptor column, Action<TextDescriptor> headerText, Dictionary<String, Ecu> missingEcus)
+        protected void AddMissingEcusNewPage(ColumnDescriptor column, Action<TextDescriptor> headerText, Dictionary<String, Ecu> missingEcus)
         {
             column.Spacing(10);
 

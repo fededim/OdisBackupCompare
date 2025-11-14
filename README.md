@@ -151,3 +151,8 @@ v1.0.3
 v1.0.4
 - Improvement: added optional standard configuration file named appsetting.json
 - Improvement: added customization of colors inside an optional appsetting.json file for theming PDF output files
+
+v1.0.5
+- Bugfix: removed duplicated row in a table header
+- Improvement: added general comparison statistics in PDF output
+- Improvement: changed the color of the type field (adaptation, coding, identification)
